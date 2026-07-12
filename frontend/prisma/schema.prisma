@@ -32,3 +32,20 @@ model Profile {
 
   @@map("profiles")
 }
+
+/// Incoming documents logged by Record Office, tracked via transaction code + QR.
+model Document {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subject         String
+  sender          String
+  dateReceived    DateTime @map("date_received") @db.Date
+  receiverName    String   @map("receiver_name")
+  transactionCode String   @unique @map("transaction_code")
+  status          String   @default("RECEIVED")
+  recordedById    String?  @map("recorded_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([dateReceived])
+  @@map("documents")
+}
