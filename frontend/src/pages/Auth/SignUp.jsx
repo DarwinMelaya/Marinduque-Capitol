@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import bcrypt from "bcryptjs";
 import toast from "react-hot-toast";
 import supabase from "../../Utils/supabaseClient";
-import { AuthField, AuthLayout } from "./AuthLayout";
 
 const OFFICES = [
   { value: "records", label: "Central Records Management" },
@@ -20,25 +19,24 @@ const getPasswordStrength = (password) => {
   if (/[0-9]/.test(password)) score += 1;
   if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
-  if (!password) {
-    return { score: 0, label: "", color: "bg-outline-variant" };
-  }
-  if (score <= 1) {
-    return { score, label: "Weak", color: "bg-error" };
-  }
-  if (score === 2) {
-    return { score, label: "Fair", color: "bg-amber-500" };
-  }
-  if (score === 3) {
-    return { score, label: "Good", color: "bg-primary/70" };
-  }
-  return { score, label: "Strong", color: "bg-primary" };
+  if (!password) return { score: 0, label: "", color: "bg-white/20" };
+  if (score <= 1) return { score, label: "Weak", color: "bg-red-400" };
+  if (score === 2) return { score, label: "Fair", color: "bg-[#a6a08a]" };
+  if (score === 3) return { score, label: "Good", color: "bg-[#607796]/80" };
+  return { score, label: "Strong", color: "bg-[#607796]" };
 };
+
+const inputClass =
+  "peer mt-1 block w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-md text-white placeholder-transparent backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#a6a08a]/60 focus:border-transparent";
+
+const labelClass =
+  "absolute left-3 -top-6 text-sm text-white/90 peer-placeholder-shown:text-base peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-2.5 transition-all peer-focus:-top-6 peer-focus:text-sm peer-focus:text-[#ebe6d6]";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState({
     fullName: "",
     employeeId: "",
@@ -54,12 +52,13 @@ const SignUp = () => {
   );
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setError(null);
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
 
     if (
       !form.fullName.trim() ||
@@ -69,12 +68,12 @@ const SignUp = () => {
       !form.password ||
       !form.reason.trim()
     ) {
-      toast.error("Please fill in all required fields.");
+      setError("Please fill in all required fields.");
       return;
     }
 
     if (form.password.length < 8) {
-      toast.error("Password must be at least 8 characters.");
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -83,7 +82,7 @@ const SignUp = () => {
     try {
       const passwordHash = await bcrypt.hash(form.password, 10);
 
-      const { data, error } = await supabase
+      const { data, error: insertError } = await supabase
         .from("profiles")
         .insert({
           full_name: form.fullName.trim(),
@@ -95,11 +94,11 @@ const SignUp = () => {
         .select("id, email, full_name, role")
         .single();
 
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("An account with this email already exists.");
+      if (insertError) {
+        if (insertError.code === "23505") {
+          setError("An account with this email already exists.");
         } else {
-          toast.error(error.message || "Failed to create account.");
+          setError(insertError.message || "Failed to create account.");
         }
         return;
       }
@@ -107,184 +106,206 @@ const SignUp = () => {
       toast.success(`Access request submitted for ${data.email}`);
       navigate("/login");
     } catch (err) {
-      toast.error(err.message || "Something went wrong.");
+      setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthLayout
-      title="Request secure system access."
-      description="Registration is limited to authorized Marinduque Capitol personnel. Complete the form for administrative review."
-      formTitle="Create access request"
-      formSubtitle="Provide your institutional details to register an admin account."
-      highlights={[
-        {
-          icon: "verified_user",
-          title: "Verified Identity",
-          body: "Employee IDs are validated against institutional records.",
-        },
-        {
-          icon: "gavel",
-          title: "Compliance First",
-          body: "Access justifications are retained for security auditing.",
-        },
-      ]}
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat relative px-4 py-10"
+      style={{ backgroundImage: "url('/img/bg.jpg')" }}
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <AuthField
-            id="full_name"
-            name="fullName"
-            label="Full Name"
-            icon="badge"
-            value={form.fullName}
-            onChange={handleChange}
-            placeholder="Juan Dela Cruz"
-            required
-          />
-          <AuthField
-            id="employee_id"
-            name="employeeId"
-            label="Employee ID"
-            icon="fingerprint"
-            value={form.employeeId}
-            onChange={handleChange}
-            placeholder="ID-8842-X"
-            required
-          />
+      <div className="absolute inset-0 bg-[#2a3648]/55" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#607796]/45 via-black/40 to-[#a6a08a]/25" />
+
+      <div className="relative z-10 max-w-lg w-full p-8 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-2xl auth-fade-up max-h-[95vh] overflow-y-auto">
+        <div className="flex justify-center mb-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 border border-white/25 backdrop-blur-sm">
+            <span
+              className="material-symbols-outlined text-[34px] text-[#ebe6d6]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              person_add
+            </span>
+          </div>
         </div>
 
-        <AuthField
-          id="office"
-          name="office"
-          label="Office / Department"
-          icon="apartment"
-          as="select"
-          value={form.office}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Select your department</option>
-          {OFFICES.map((office) => (
-            <option key={office.value} value={office.value}>
-              {office.label}
-            </option>
-          ))}
-        </AuthField>
-
-        <AuthField
-          id="email"
-          name="email"
-          label="Work Email"
-          icon="mail"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="name@marinduque.gov.ph"
-          required
-        />
-
-        <div>
-          <AuthField
-            id="password"
-            name="password"
-            label="Password"
-            icon="lock"
-            type={showPassword ? "text" : "password"}
-            value={form.password}
-            onChange={handleChange}
-            placeholder="At least 8 characters"
-            minLength={8}
-            required
-            rightSlot={
-              <button
-                type="button"
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors hover:text-primary"
-                onClick={() => setShowPassword((prev) => !prev)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                <span className="material-symbols-outlined text-[20px]">
-                  {showPassword ? "visibility_off" : "visibility"}
-                </span>
-              </button>
-            }
-          />
-          {form.password && (
-            <div className="mt-2.5 space-y-1.5">
-              <div className="flex gap-1.5">
-                {[1, 2, 3, 4].map((level) => (
-                  <span
-                    key={level}
-                    className={`h-1 flex-1 rounded-full transition-colors ${
-                      strength.score >= level
-                        ? strength.color
-                        : "bg-outline-variant/50"
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-[11px] font-medium text-on-surface-variant">
-                Strength: {strength.label}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <AuthField
-          id="reason"
-          name="reason"
-          label="Reason for Access"
-          icon="description"
-          as="textarea"
-          value={form.reason}
-          onChange={handleChange}
-          placeholder="Describe your role and why DTRS access is required..."
-          rows={3}
-          required
-        />
-        <p className="-mt-2 text-[11px] italic text-on-surface-variant">
-          This justification is retained for security auditing.
+        <h1 className="text-center text-2xl sm:text-3xl font-extrabold mb-1 tracking-[0.14em] text-white bg-gradient-to-r from-[#607796]/85 to-[#4d627c]/85 px-5 py-2.5 rounded-xl backdrop-blur-md border-2 border-white/30">
+          DTRS
+        </h1>
+        <p className="text-center text-sm text-[#ebe6d6] mb-6">
+          Request Access — Marinduque Capitol
         </p>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="auth-btn-shine mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold tracking-wide text-white shadow-[0_12px_28px_-12px_rgba(13,114,59,0.65)] transition-transform active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? (
-            <>
-              Submitting request
-              <span className="material-symbols-outlined animate-spin text-[18px]">
-                progress_activity
-              </span>
-            </>
-          ) : (
-            <>
-              Submit access request
-              <span className="material-symbols-outlined text-[18px]">send</span>
-            </>
-          )}
-        </button>
-      </form>
+        {error && (
+          <div className="mb-4 bg-red-500/20 border border-red-300/40 text-red-100 px-4 py-3 rounded-md text-sm backdrop-blur-sm">
+            {error}
+          </div>
+        )}
 
-      <div className="mt-7 border-t border-outline-variant/60 pt-5 text-center">
-        <Link
-          to="/login"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-[#0a5c30]"
-        >
-          <span className="material-symbols-outlined text-[18px]">
-            arrow_back
-          </span>
-          Back to sign in
-        </Link>
-        <p className="mt-4 text-[11px] leading-relaxed text-on-surface-variant/80">
-          By submitting, you agree to the System Terms of Use and Privacy
-          Policy.
+        <form className="space-y-7" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
+            <div className="relative">
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                required
+                className={inputClass}
+                placeholder="Full name"
+                value={form.fullName}
+                onChange={handleChange}
+              />
+              <label htmlFor="fullName" className={labelClass}>
+                Full Name
+              </label>
+            </div>
+            <div className="relative">
+              <input
+                id="employeeId"
+                name="employeeId"
+                type="text"
+                required
+                className={inputClass}
+                placeholder="Employee ID"
+                value={form.employeeId}
+                onChange={handleChange}
+              />
+              <label htmlFor="employeeId" className={labelClass}>
+                Employee ID
+              </label>
+            </div>
+          </div>
+
+          <div className="relative">
+            <select
+              id="office"
+              name="office"
+              required
+              className={`${inputClass} appearance-none cursor-pointer`}
+              value={form.office}
+              onChange={handleChange}
+            >
+              <option value="" className="text-slate-800">
+                Select your department
+              </option>
+              {OFFICES.map((office) => (
+                <option
+                  key={office.value}
+                  value={office.value}
+                  className="text-slate-800"
+                >
+                  {office.label}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="office" className={labelClass}>
+              Office / Department
+            </label>
+          </div>
+
+          <div className="relative">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              className={inputClass}
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+            />
+            <label htmlFor="email" className={labelClass}>
+              Work Email
+            </label>
+          </div>
+
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={8}
+              className={`${inputClass} pr-11`}
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-0 top-1 flex items-center pr-3 text-white/70 hover:text-[#ebe6d6]"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {showPassword ? "visibility_off" : "visibility"}
+              </span>
+            </button>
+            <label htmlFor="password" className={labelClass}>
+              Password
+            </label>
+            {form.password && (
+              <div className="mt-2 space-y-1">
+                <div className="flex gap-1.5">
+                  {[1, 2, 3, 4].map((level) => (
+                    <span
+                      key={level}
+                      className={`h-1 flex-1 rounded-full ${
+                        strength.score >= level
+                          ? strength.color
+                          : "bg-white/20"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-[11px] text-white/70">
+                  Strength: {strength.label}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <textarea
+              id="reason"
+              name="reason"
+              required
+              rows={3}
+              className={`${inputClass} resize-none peer-placeholder-shown:top-3`}
+              placeholder="Reason"
+              value={form.reason}
+              onChange={handleChange}
+            />
+            <label htmlFor="reason" className={labelClass}>
+              Reason for Access
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center items-center py-2.5 px-4 border border-white/20 rounded-md text-sm font-semibold text-white bg-[#607796]/85 hover:bg-[#4d627c]/95 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_18px_rgba(96,119,150,0.55)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Submitting..." : "Submit Request"}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-white/75">
+          <Link
+            to="/login"
+            className="font-semibold text-[#ebe6d6] hover:text-white transition-colors inline-flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              arrow_back
+            </span>
+            Back to sign in
+          </Link>
         </p>
       </div>
-    </AuthLayout>
+    </div>
   );
 };
 

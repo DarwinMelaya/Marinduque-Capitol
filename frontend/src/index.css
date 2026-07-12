@@ -1,50 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-  /* Deep Forest Green — Marinduque Capitol / DTRS brand */
-  --color-primary: #0d723b;
+  /* Government of Marinduque — Dusty Slate Blue + Muted Khaki */
+  --color-primary: #607796;
   --color-on-primary: #ffffff;
-  --color-primary-container: #c8ecd4;
-  --color-on-primary-container: #00210d;
-  --color-primary-fixed: #b8e8c8;
-  --color-on-primary-fixed: #00210d;
-  --color-inverse-primary: #86d99f;
+  --color-primary-container: #d7e0ea;
+  --color-on-primary-container: #1c2838;
+  --color-primary-fixed: #c5d2e0;
+  --color-on-primary-fixed: #1c2838;
+  --color-inverse-primary: #a8b9cc;
 
-  --color-secondary: #3d5c45;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #d5e8cf;
-  --color-on-secondary-container: #111f0f;
-  --color-secondary-fixed: #d5e8cf;
-  --color-on-secondary-fixed: #111f0f;
+  --color-secondary: #a6a08a;
+  --color-on-secondary: #1f1c14;
+  --color-secondary-container: #ebe6d6;
+  --color-on-secondary-container: #2a271c;
+  --color-secondary-fixed: #ebe6d6;
+  --color-on-secondary-fixed: #2a271c;
 
-  --color-tertiary: #2f5a4a;
+  --color-tertiary: #7a8494;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #d0ebe0;
-  --color-on-tertiary-container: #002117;
-  --color-tertiary-fixed: #d0ebe0;
-  --color-on-tertiary-fixed: #002117;
+  --color-tertiary-container: #e2e7ee;
+  --color-on-tertiary-container: #222830;
+  --color-tertiary-fixed: #e2e7ee;
+  --color-on-tertiary-fixed: #222830;
 
   --color-error: #ba1a1a;
   --color-on-error: #ffffff;
   --color-error-container: #ffdad6;
   --color-on-error-container: #410002;
 
-  --color-background: #f0f5f1;
-  --color-on-background: #141e16;
-  --color-surface: #f7faf7;
-  --color-on-surface: #141e16;
-  --color-surface-variant: #dce5dd;
-  --color-on-surface-variant: #3d4a40;
-  --color-outline: #6d7a70;
-  --color-outline-variant: #bdc9c0;
-  --color-surface-container-low: #ebf2ec;
-  --color-surface-container: #e4ece5;
-  --color-surface-container-high: #dde7df;
-  --color-surface-container-highest: #d6e1d8;
-  --color-surface-bright: #f7faf7;
-  --color-surface-dim: #d0dbd2;
-  --color-inverse-surface: #28322a;
-  --color-inverse-on-surface: #eef4ef;
+  --color-background: #f3f4f6;
+  --color-on-background: #1c2229;
+  --color-surface: #f7f8f9;
+  --color-on-surface: #1c2229;
+  --color-surface-variant: #e3e6ea;
+  --color-on-surface-variant: #4a5563;
+  --color-outline: #7a8490;
+  --color-outline-variant: #c5cbd3;
+  --color-surface-container-low: #eceff2;
+  --color-surface-container: #e6eaee;
+  --color-surface-container-high: #dfe4e9;
+  --color-surface-container-highest: #d8dee4;
+  --color-surface-bright: #f7f8f9;
+  --color-surface-dim: #cfd5dc;
+  --color-inverse-surface: #2a3138;
+  --color-inverse-on-surface: #eef1f4;
 
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", Georgia, serif;
@@ -77,93 +77,12 @@
   }
 }
 
-@keyframes auth-float {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-14px) scale(1.03);
-  }
-}
-
-@keyframes auth-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-@keyframes auth-pulse-ring {
-  0% {
-    transform: scale(0.92);
-    opacity: 0.55;
-  }
-  70% {
-    transform: scale(1.08);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1.08);
-    opacity: 0;
-  }
-}
-
 .auth-fade-up {
   animation: auth-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.auth-fade-up-delay-1 {
-  animation-delay: 0.1s;
-}
-
-.auth-fade-up-delay-2 {
-  animation-delay: 0.22s;
-}
-
-.auth-fade-up-delay-3 {
-  animation-delay: 0.34s;
-}
-
-.auth-float {
-  animation: auth-float 8s ease-in-out infinite;
-}
-
-.auth-btn-shine {
-  background-image: linear-gradient(
-    110deg,
-    #0d723b 0%,
-    #0d723b 40%,
-    #149a52 50%,
-    #0d723b 60%,
-    #0d723b 100%
-  );
-  background-size: 200% 100%;
-}
-
-.auth-btn-shine:hover:not(:disabled) {
-  animation: auth-shimmer 1.4s ease;
-}
-
-.auth-pulse-ring {
-  animation: auth-pulse-ring 2.8s ease-out infinite;
-}
-
-.auth-mesh {
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 20%, rgba(184, 232, 200, 0.28), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 80% 10%, rgba(13, 114, 59, 0.45), transparent 50%),
-    radial-gradient(ellipse 60% 70% at 70% 90%, rgba(8, 82, 42, 0.55), transparent 55%),
-    linear-gradient(160deg, #0d723b 0%, #0a5c30 48%, #064422 100%);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .auth-fade-up,
-  .auth-float,
-  .auth-btn-shine:hover:not(:disabled),
-  .auth-pulse-ring {
+  .auth-fade-up {
     animation: none !important;
   }
 }

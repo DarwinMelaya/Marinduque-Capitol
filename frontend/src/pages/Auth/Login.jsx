@@ -2,27 +2,28 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { loginWithCredentials } from "../../api/auth";
-import { AuthField, AuthLayout } from "./AuthLayout";
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setError(null);
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
 
     if (!form.email.trim() || !form.password) {
-      toast.error("Please enter your email and password.");
+      setError("Please enter your email and password.");
       return;
     }
 
@@ -38,124 +39,142 @@ const Login = () => {
         navigate("/", { replace: true });
       }
     } catch (err) {
-      toast.error(err.message || "Something went wrong.");
+      setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthLayout
-      title="Govern documents with confidence."
-      description="Sign in to the Marinduque Capitol Document Tracking System using your authorized institutional credentials."
-      formTitle="Welcome back"
-      formSubtitle="Enter your work email and password to continue."
-      highlights={[
-        {
-          icon: "shield_lock",
-          title: "Protected Access",
-          body: "Only verified personnel with active accounts can enter the workspace.",
-        },
-        {
-          icon: "policy",
-          title: "Audit Ready",
-          body: "Sign-in activity is monitored to protect document integrity.",
-        },
-      ]}
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat relative px-4 py-10"
+      style={{ backgroundImage: "url('/img/bg.jpg')" }}
     >
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <AuthField
-          id="login_email"
-          name="email"
-          label="Work Email"
-          icon="mail"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="name@marinduque.gov.ph"
-          autoComplete="email"
-          required
-        />
+      <div className="absolute inset-0 bg-[#2a3648]/55" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#607796]/45 via-black/40 to-[#a6a08a]/25" />
 
-        <AuthField
-          id="login_password"
-          name="password"
-          label="Password"
-          icon="lock"
-          type={showPassword ? "text" : "password"}
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Enter your password"
-          autoComplete="current-password"
-          required
-          rightSlot={
+      <div className="relative z-10 max-w-md w-full p-8 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-2xl auth-fade-up">
+        <div className="flex justify-center mb-4">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 border border-white/25 backdrop-blur-sm drop-shadow-[0_0_15px_rgba(166,160,138,0.35)]">
+            <span
+              className="material-symbols-outlined text-[42px] text-[#ebe6d6]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              account_balance
+            </span>
+          </div>
+        </div>
+
+        <h1 className="text-center text-3xl sm:text-4xl font-extrabold mb-2 tracking-[0.18em] text-white bg-gradient-to-r from-[#607796]/85 to-[#4d627c]/85 px-6 py-3 rounded-xl backdrop-blur-md shadow-[0_0_25px_rgba(96,119,150,0.4)] border-2 border-white/30">
+          DTRS
+        </h1>
+        <p className="text-center text-sm font-medium tracking-[0.2em] uppercase text-[#ebe6d6] mb-8">
+          Marinduque Capitol
+        </p>
+
+        {error && (
+          <div className="mb-4 bg-red-500/20 border border-red-300/40 text-red-100 px-4 py-3 rounded-md text-sm backdrop-blur-sm">
+            {error}
+          </div>
+        )}
+
+        <form className="mt-2 space-y-8" onSubmit={handleSubmit}>
+          <div className="relative">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              className="peer mt-1 block w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-md text-white placeholder-transparent backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#a6a08a]/60 focus:border-transparent"
+              placeholder="Enter email"
+              value={form.email}
+              onChange={handleChange}
+            />
+            <label
+              htmlFor="email"
+              className="absolute left-3 -top-6 text-sm text-white/90 peer-placeholder-shown:text-base peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-2.5 transition-all peer-focus:-top-6 peer-focus:text-sm peer-focus:text-[#ebe6d6]"
+            >
+              Work Email
+            </label>
+          </div>
+
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              required
+              autoComplete="current-password"
+              className="peer mt-1 block w-full px-3 py-2.5 pr-11 bg-white/10 border border-white/20 rounded-md text-white placeholder-transparent backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#a6a08a]/60 focus:border-transparent"
+              placeholder="Enter password"
+              value={form.password}
+              onChange={handleChange}
+            />
             <button
               type="button"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors hover:text-primary"
               onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-0 top-1 flex items-center pr-3 text-white/70 hover:text-[#ebe6d6]"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               <span className="material-symbols-outlined text-[20px]">
                 {showPassword ? "visibility_off" : "visibility"}
               </span>
             </button>
-          }
-        />
+            <label
+              htmlFor="password"
+              className="absolute left-3 -top-6 text-sm text-white/90 peer-placeholder-shown:text-base peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-2.5 transition-all peer-focus:-top-6 peer-focus:text-sm peer-focus:text-[#ebe6d6]"
+            >
+              Password
+            </label>
+          </div>
 
-        <div className="flex items-center justify-between pt-1 text-xs">
-          <label className="inline-flex cursor-pointer items-center gap-2 text-on-surface-variant">
-            <input
-              type="checkbox"
-              className="size-3.5 rounded border-outline-variant text-primary focus:ring-primary/30"
-            />
-            Remember this device
-          </label>
           <button
-            type="button"
-            className="font-semibold text-primary transition-colors hover:text-[#0a5c30]"
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center items-center py-2.5 px-4 border border-white/20 rounded-md text-sm font-semibold text-white bg-[#607796]/85 hover:bg-[#4d627c]/95 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_18px_rgba(96,119,150,0.55)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Forgot password?
+            {loading ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Signing in...
+              </>
+            ) : (
+              "Sign in"
+            )}
           </button>
-        </div>
+        </form>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="auth-btn-shine mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold tracking-wide text-white shadow-[0_12px_28px_-12px_rgba(13,114,59,0.65)] transition-transform active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? (
-            <>
-              Signing you in
-              <span className="material-symbols-outlined animate-spin text-[18px]">
-                progress_activity
-              </span>
-            </>
-          ) : (
-            <>
-              Sign in to DTRS
-              <span className="material-symbols-outlined text-[18px]">
-                arrow_forward
-              </span>
-            </>
-          )}
-        </button>
-      </form>
-
-      <div className="mt-8 border-t border-outline-variant/60 pt-6 text-center">
-        <p className="text-sm text-on-surface-variant">
-          Need an account?{" "}
+        <p className="mt-6 text-center text-sm text-white/75">
+          Need access?{" "}
           <Link
             to="/signup"
-            className="font-semibold text-primary underline-offset-4 transition-colors hover:underline"
+            className="font-semibold text-[#ebe6d6] hover:text-white transition-colors"
           >
-            Request access
+            Request an account
           </Link>
         </p>
-        <p className="mt-4 text-[11px] leading-relaxed text-on-surface-variant/80">
-          Authorized use only. Unauthorized access attempts are logged.
-        </p>
       </div>
-    </AuthLayout>
+    </div>
   );
 };
 
