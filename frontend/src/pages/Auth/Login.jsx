@@ -54,23 +54,19 @@ const Login = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-[#607796]/45 via-black/40 to-[#a6a08a]/25" />
 
       <div className="relative z-10 max-w-md w-full p-8 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-2xl auth-fade-up">
-        <div className="flex justify-center mb-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 border border-white/25 backdrop-blur-sm drop-shadow-[0_0_15px_rgba(166,160,138,0.35)]">
-            <span
-              className="material-symbols-outlined text-[42px] text-[#ebe6d6]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              account_balance
-            </span>
-          </div>
+        <div className="flex flex-col items-center mb-6">
+          <img
+            src="/img/logo.png"
+            alt="Lalawigan ng Marinduque"
+            className="h-24 w-auto drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+          />
+          <h1 className="mt-4 text-center text-lg sm:text-xl font-extrabold tracking-[0.12em] text-white">
+            GOVERNMENT OF MARINDUQUE
+          </h1>
+          <p className="mt-1 text-center text-xs font-semibold tracking-[0.22em] uppercase text-[#ebe6d6]">
+            DTRS · Document Tracking System
+          </p>
         </div>
-
-        <h1 className="text-center text-3xl sm:text-4xl font-extrabold mb-2 tracking-[0.18em] text-white bg-gradient-to-r from-[#607796]/85 to-[#4d627c]/85 px-6 py-3 rounded-xl backdrop-blur-md shadow-[0_0_25px_rgba(96,119,150,0.4)] border-2 border-white/30">
-          DTRS
-        </h1>
-        <p className="text-center text-sm font-medium tracking-[0.2em] uppercase text-[#ebe6d6] mb-8">
-          Marinduque Capitol
-        </p>
 
         {error && (
           <div className="mb-4 bg-red-500/20 border border-red-300/40 text-red-100 px-4 py-3 rounded-md text-sm backdrop-blur-sm">

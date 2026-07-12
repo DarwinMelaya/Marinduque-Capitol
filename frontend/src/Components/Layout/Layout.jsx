@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
+import Navbar from "./Navbar";
 
 const Layout = () => {
   return (
@@ -15,7 +16,8 @@ const Layout = () => {
         <AdminSidebar />
         <main className="flex-1 min-w-0 overflow-y-auto">
           <div className="p-6 md:p-8">
-            <div className="rounded-2xl border border-white/50 bg-white/55 backdrop-blur-md shadow-[0_8px_30px_rgba(96,119,150,0.12)] p-6 md:p-8 min-h-[calc(100vh-3rem)]">
+            <Navbar />
+            <div className="rounded-2xl border border-white/50 bg-white/55 backdrop-blur-md shadow-[0_8px_30px_rgba(96,119,150,0.12)] p-6 md:p-8 min-h-[calc(100vh-8rem)]">
               <Outlet />
             </div>
           </div>
