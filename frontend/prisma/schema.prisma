@@ -1,0 +1,31 @@
+// Prisma manages schema/migrations for Supabase Postgres.
+// Runtime auth reads/writes go through supabaseClient (profiles table).
+//
+// Prisma 7: connection URLs live in prisma.config.ts (not here).
+// DATABASE_URL = transaction pooler (6543) for app runtime
+// DIRECT_URL   = session pooler (5432) for migrations
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model Profile {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("profiles")
+}
