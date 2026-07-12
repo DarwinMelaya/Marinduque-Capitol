@@ -46,6 +46,10 @@ model Document {
   /// e.g. "Record Office" | "Provincial Administrator"
   currentLocation String   @default("Record Office") @map("current_location")
   recordedById    String?  @map("recorded_by_id") @db.Uuid
+  /// Staff who confirmed receive at the current office (e.g. PA scan/receive)
+  receivedById    String?  @map("received_by_id") @db.Uuid
+  receivedByName  String?  @map("received_by_name")
+  receivedAt      DateTime? @map("received_at") @db.Timestamptz(6)
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

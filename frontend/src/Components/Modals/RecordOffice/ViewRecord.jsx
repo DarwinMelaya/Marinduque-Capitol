@@ -215,6 +215,14 @@ const ViewRecord = ({ open, document, onClose, onEdit }) => {
               {document.currentLocation || "Record Office"}
             </dd>
           </div>
+          {document.receivedByName && (
+            <div className="flex justify-between gap-3">
+              <dt className="text-[#a6a08a]">Received by</dt>
+              <dd className="text-right font-medium text-[#3f5168]">
+                {document.receivedByName}
+              </dd>
+            </div>
+          )}
         </dl>
 
         <div className="mt-5 flex flex-wrap gap-2 print:hidden">

@@ -8,6 +8,7 @@ import {
   receiveAtProvincialAdministrator,
   statusLabel,
 } from "../../../api/documents";
+import { getSession } from "../../../api/auth";
 
 const SCANNER_REGION_ID = "pa-receive-qr-reader";
 
@@ -217,6 +218,7 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
 
   if (!open) return null;
 
+  const session = getSession();
   const canReceive = foundDoc?.status === DOCUMENT_STATUS.FORWARDED;
 
   const handleManualLookup = async (e) => {
@@ -443,6 +445,30 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
                   {foundDoc.currentLocation}
                 </span>
               </div>
+              {foundDoc.receivedByName && (
+                <>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-[#a6a08a]">Received by</span>
+                    <span className="text-right font-medium text-[#3f5168]">
+                      {foundDoc.receivedByName}
+                    </span>
+                  </div>
+                  {foundDoc.receivedAt && (
+                    <div className="flex justify-between gap-3">
+                      <span className="text-[#a6a08a]">Received at</span>
+                      <span className="text-right text-[#3f5168]">
+                        {new Date(foundDoc.receivedAt).toLocaleString("en-PH", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {!canReceive && (
@@ -452,6 +478,15 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
                   ? "This document is already at Provincial Administrator."
                   : "This document has not been forwarded yet. Ask Record Office to forward it first."}
               </div>
+            )}
+
+            {canReceive && (
+              <p className="text-sm text-on-surface-variant">
+                Receiving as{" "}
+                <span className="font-semibold text-[#3f5168]">
+                  {session?.fullName || session?.email || "signed-in user"}
+                </span>
+              </p>
             )}
 
             <div className="flex flex-wrap gap-2 justify-end">

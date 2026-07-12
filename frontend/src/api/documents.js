@@ -20,7 +20,7 @@ export const statusLabel = (status) => {
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 const DOCUMENT_SELECT =
-  "id, subject, sender, date_received, receiver_name, transaction_code, status, current_location, recorded_by_id, created_at, updated_at";
+  "id, subject, sender, date_received, receiver_name, transaction_code, status, current_location, recorded_by_id, received_by_id, received_by_name, received_at, created_at, updated_at";
 
 const randomSegment = (length = 6) => {
   let out = "";
@@ -49,6 +49,9 @@ const mapDocument = (row) => ({
   status: row.status,
   currentLocation: row.current_location,
   recordedById: row.recorded_by_id,
+  receivedById: row.received_by_id,
+  receivedByName: row.received_by_name,
+  receivedAt: row.received_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -264,11 +267,19 @@ export const receiveAtProvincialAdministrator = async (id) => {
     throw new Error("Only forwarded documents can be received.");
   }
 
+  const session = getSession();
+  if (!session?.id) {
+    throw new Error("You must be signed in to receive a document.");
+  }
+
   const { data, error } = await supabase
     .from("documents")
     .update({
       status: DOCUMENT_STATUS.RECEIVED,
       current_location: DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR,
+      received_by_id: session.id,
+      received_by_name: session.fullName || session.email || "Unknown",
+      received_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

@@ -147,6 +147,7 @@ const ProvincialAdministratorRecords = () => {
                   <th className="pb-2 pr-4 font-semibold">Date</th>
                   <th className="pb-2 pr-4 font-semibold">Status</th>
                   <th className="pb-2 pr-4 font-semibold">Location</th>
+                  <th className="pb-2 pr-4 font-semibold">Received by</th>
                   <th className="pb-2 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
@@ -175,6 +176,9 @@ const ProvincialAdministratorRecords = () => {
                     </td>
                     <td className="py-3 pr-4 text-on-surface-variant">
                       {doc.currentLocation}
+                    </td>
+                    <td className="py-3 pr-4 text-on-surface-variant">
+                      {doc.receivedByName || "—"}
                     </td>
                     <td className="py-3">
                       <div className="flex items-center justify-end gap-1">
