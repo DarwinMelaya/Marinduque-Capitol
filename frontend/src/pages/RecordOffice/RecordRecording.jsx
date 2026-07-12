@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { createDocument, listDocuments } from "../../api/documents";
+import {
+  DOCUMENT_LOCATION,
+  DOCUMENT_STATUS,
+  createDocument,
+  forwardToProvincialAdministrator,
+  listDocuments,
+  statusLabel,
+} from "../../api/documents";
 import ViewRecord from "../../Components/Modals/RecordOffice/ViewRecord";
 import EditRecord from "../../Components/Modals/RecordOffice/EditRecord";
 import { generateQrWithLogo } from "../../Utils/qrWithLogo";
@@ -38,6 +45,7 @@ const RecordRecording = () => {
   const [qrDataUrl, setQrDataUrl] = useState(null);
   const [viewingDoc, setViewingDoc] = useState(null);
   const [editingDoc, setEditingDoc] = useState(null);
+  const [forwardingId, setForwardingId] = useState(null);
 
   const loadDocuments = async () => {
     setLoadingList(true);
@@ -126,6 +134,24 @@ const RecordRecording = () => {
   const openEditFromView = (doc) => {
     setViewingDoc(null);
     setEditingDoc(doc);
+  };
+
+  const canForward = (doc) =>
+    doc.status === DOCUMENT_STATUS.RECEIVED &&
+    doc.currentLocation === DOCUMENT_LOCATION.RECORD_OFFICE;
+
+  const handleForward = async (doc) => {
+    if (!canForward(doc)) return;
+    setForwardingId(doc.id);
+    try {
+      const updated = await forwardToProvincialAdministrator(doc.id);
+      toast.success("Forwarded to Provincial Administrator.");
+      handleDocumentSaved(updated);
+    } catch (err) {
+      toast.error(err.message || "Failed to forward document.");
+    } finally {
+      setForwardingId(null);
+    }
   };
 
   return (
@@ -396,7 +422,8 @@ const RecordRecording = () => {
                   <th className="pb-2 pr-4 font-semibold">Subject</th>
                   <th className="pb-2 pr-4 font-semibold">Sender</th>
                   <th className="pb-2 pr-4 font-semibold">Date</th>
-                  <th className="pb-2 pr-4 font-semibold">Receiver</th>
+                  <th className="pb-2 pr-4 font-semibold">Status</th>
+                  <th className="pb-2 pr-4 font-semibold">Location</th>
                   <th className="pb-2 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
@@ -425,8 +452,13 @@ const RecordRecording = () => {
                     <td className="py-3 pr-4 text-on-surface-variant">
                       {formatDate(doc.dateReceived)}
                     </td>
+                    <td className="py-3 pr-4">
+                      <span className="inline-flex rounded-md bg-[#607796]/10 px-2 py-1 text-xs font-semibold text-[#607796]">
+                        {statusLabel(doc.status)}
+                      </span>
+                    </td>
                     <td className="py-3 pr-4 text-on-surface-variant">
-                      {doc.receiverName}
+                      {doc.currentLocation || DOCUMENT_LOCATION.RECORD_OFFICE}
                     </td>
                     <td className="py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -452,6 +484,20 @@ const RecordRecording = () => {
                             edit
                           </span>
                         </button>
+                        {canForward(doc) && (
+                          <button
+                            type="button"
+                            onClick={() => handleForward(doc)}
+                            disabled={forwardingId === doc.id}
+                            className="inline-flex items-center gap-1 rounded-md bg-[#607796] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#4d627c] disabled:opacity-50"
+                            title="Forward to Provincial Administrator"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">
+                              send
+                            </span>
+                            {forwardingId === doc.id ? "..." : "Forward"}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

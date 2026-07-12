@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import supabase from "../Utils/supabaseClient";
 
 const SESSION_KEY = "dtrs_session";
+const REMEMBER_KEY = "dtrs_remembered";
 
 export const getSession = () => {
   try {
@@ -20,16 +21,51 @@ export const clearSession = () => {
   localStorage.removeItem(SESSION_KEY);
 };
 
+export const getRememberedCredentials = () => {
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.email) return null;
+    return {
+      email: parsed.email,
+      password: parsed.password || "",
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const setRememberedCredentials = ({ email, password }) => {
+  localStorage.setItem(
+    REMEMBER_KEY,
+    JSON.stringify({
+      email: email.trim().toLowerCase(),
+      password,
+    }),
+  );
+};
+
+export const clearRememberedCredentials = () => {
+  localStorage.removeItem(REMEMBER_KEY);
+};
+
 export const isAdmin = (session = getSession()) =>
   session?.role === "ADMIN";
 
 export const isRecordOffice = (session = getSession()) =>
   session?.role === "RecordOffice";
 
+export const isProvincialAdministrator = (session = getSession()) =>
+  session?.role === "ProvincialAdministrator";
+
 export const getHomePath = (session = getSession()) => {
   if (!session) return "/login";
   if (session.role === "ADMIN") return "/admin";
   if (session.role === "RecordOffice") return "/record-office";
+  if (session.role === "ProvincialAdministrator") {
+    return "/provincial-administrator";
+  }
   return "/";
 };
 

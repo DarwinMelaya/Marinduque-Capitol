@@ -11,3 +11,7 @@ export { default as AdminRegistration } from "./Admin/AdminRegistration";
 // Record Office
 export { default as RecordDashboard } from "./RecordOffice/RecordDashboard";
 export { default as RecordRecording } from "./RecordOffice/RecordRecording";
+
+// Provincial Administrator
+export { default as ProvincialAdministratorDashboard } from "./ProvincialAdministrator/ProvincialAdministratorDashboard";
+export { default as ProvincialAdministratorRecords } from "./ProvincialAdministrator/ProvincialAdministratorRecords";

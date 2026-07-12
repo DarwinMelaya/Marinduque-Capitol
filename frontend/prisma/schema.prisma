@@ -41,11 +41,16 @@ model Document {
   dateReceived    DateTime @map("date_received") @db.Date
   receiverName    String   @map("receiver_name")
   transactionCode String   @unique @map("transaction_code")
+  /// RECEIVED | FORWARDED
   status          String   @default("RECEIVED")
+  /// e.g. "Record Office" | "Provincial Administrator"
+  currentLocation String   @default("Record Office") @map("current_location")
   recordedById    String?  @map("recorded_by_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([dateReceived])
+  @@index([status])
+  @@index([currentLocation])
   @@map("documents")
 }

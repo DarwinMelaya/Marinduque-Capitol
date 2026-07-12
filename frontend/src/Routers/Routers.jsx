@@ -12,6 +12,8 @@ import {
   AdminRegistration,
   RecordDashboard,
   RecordRecording,
+  ProvincialAdministratorDashboard,
+  ProvincialAdministratorRecords,
 } from "../pages";
 import ProtectedRoutes from "../Components/Security/ProtectedRoutes";
 import Layout from "../Components/Layout/Layout";
@@ -39,6 +41,17 @@ export const Routers = () => {
           <Route path="/record-office" element={<Layout />}>
             <Route index element={<RecordDashboard />} />
             <Route path="recording" element={<RecordRecording />} />
+          </Route>
+        </Route>
+
+        {/* Provincial Administrator — ProvincialAdministrator role only */}
+        <Route element={<ProtectedRoutes role="ProvincialAdministrator" />}>
+          <Route path="/provincial-administrator" element={<Layout />}>
+            <Route index element={<ProvincialAdministratorDashboard />} />
+            <Route
+              path="records"
+              element={<ProvincialAdministratorRecords />}
+            />
           </Route>
         </Route>
 

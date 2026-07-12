@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "vite preview --host",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio"
@@ -19,6 +19,7 @@
     "axios": "^1.8.2",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
+    "html5-qrcode": "^2.3.8",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-datepicker": "^8.1.0",

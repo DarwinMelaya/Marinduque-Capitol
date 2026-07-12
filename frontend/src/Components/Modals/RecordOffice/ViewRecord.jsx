@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { statusLabel } from "../../../api/documents";
 import { generateQrWithLogo } from "../../../Utils/qrWithLogo";
 
 const formatDate = (value) => {
@@ -204,8 +205,14 @@ const ViewRecord = ({ open, document, onClose, onEdit }) => {
             <dt className="text-[#a6a08a]">Status</dt>
             <dd className="text-right">
               <span className="inline-flex rounded-md bg-[#607796]/10 px-2 py-0.5 text-xs font-semibold text-[#607796]">
-                {document.status || "RECEIVED"}
+                {statusLabel(document.status)}
               </span>
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-[#a6a08a]">Current location</dt>
+            <dd className="text-right font-medium text-[#3f5168]">
+              {document.currentLocation || "Record Office"}
             </dd>
           </div>
         </dl>

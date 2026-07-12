@@ -1,21 +1,40 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getHomePath, loginWithCredentials } from "../../api/auth";
+import {
+  clearRememberedCredentials,
+  getHomePath,
+  getRememberedCredentials,
+  loginWithCredentials,
+  setRememberedCredentials,
+} from "../../api/auth";
+
+const loadInitialForm = () => {
+  const remembered = getRememberedCredentials();
+  if (!remembered) {
+    return { email: "", password: "", rememberMe: false };
+  }
+  return {
+    email: remembered.email,
+    password: remembered.password,
+    rememberMe: true,
+  };
+};
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
+  const [form, setForm] = useState(loadInitialForm);
 
   const handleChange = (e) => {
     setError(null);
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, type, checked, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -31,6 +50,16 @@ const Login = () => {
 
     try {
       const session = await loginWithCredentials(form.email, form.password);
+
+      if (form.rememberMe) {
+        setRememberedCredentials({
+          email: form.email,
+          password: form.password,
+        });
+      } else {
+        clearRememberedCredentials();
+      }
+
       toast.success(`Welcome back, ${session.fullName}`);
       navigate(getHomePath(session), { replace: true });
     } catch (err) {
@@ -117,6 +146,23 @@ const Login = () => {
               className="absolute left-3 -top-6 text-sm text-white/90 peer-placeholder-shown:text-base peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-2.5 transition-all peer-focus:-top-6 peer-focus:text-sm peer-focus:text-[#ebe6d6]"
             >
               Password
+            </label>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 -mt-3">
+            <label
+              htmlFor="rememberMe"
+              className="inline-flex items-center gap-2 cursor-pointer select-none text-sm text-white/85"
+            >
+              <input
+                id="rememberMe"
+                name="rememberMe"
+                type="checkbox"
+                checked={form.rememberMe}
+                onChange={handleChange}
+                className="h-4 w-4 rounded border-white/30 bg-white/10 text-[#607796] focus:ring-[#a6a08a]/60 focus:ring-offset-0"
+              />
+              Remember me
             </label>
           </div>
 
