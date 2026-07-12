@@ -15,7 +15,10 @@ datasource db {
 
 enum Role {
   ADMIN
-  USER
+  BudgetOffice
+  GovernorOffice
+  ProvincialAdministrator
+  RecordOffice
 }
 
 model Profile {
