@@ -1,8 +1,13 @@
 import { Outlet } from "react-router-dom";
+import { getSession, isRecordOffice } from "../../api/auth";
 import AdminSidebar from "./AdminSidebar";
+import RecordSidebar from "./RecordSidebar";
 import Navbar from "./Navbar";
 
 const Layout = () => {
+  const session = getSession();
+  const Sidebar = isRecordOffice(session) ? RecordSidebar : AdminSidebar;
+
   return (
     <div className="min-h-screen flex relative text-on-surface font-sans">
       <div
@@ -13,7 +18,7 @@ const Layout = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-[#607796]/10 via-transparent to-[#a6a08a]/15" />
 
       <div className="relative z-10 flex w-full min-h-screen">
-        <AdminSidebar />
+        <Sidebar />
         <main className="flex-1 min-w-0 overflow-y-auto">
           <div className="p-6 md:p-8">
             <Navbar />

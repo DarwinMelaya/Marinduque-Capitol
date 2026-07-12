@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { getSession, isAdmin } from "../../api/auth";
+import { getHomePath, getSession } from "../../api/auth";
 
 /**
- * Protects nested routes. Use role="ADMIN" for admin-only pages.
+ * Protects nested routes. Pass role (e.g. "ADMIN", "RecordOffice") for role-only pages.
  */
 const ProtectedRoutes = ({ role }) => {
   const location = useLocation();
@@ -12,8 +12,8 @@ const ProtectedRoutes = ({ role }) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (role === "ADMIN" && !isAdmin(session)) {
-    return <Navigate to="/login" replace />;
+  if (role && session.role !== role) {
+    return <Navigate to={getHomePath(session)} replace />;
   }
 
   return <Outlet />;

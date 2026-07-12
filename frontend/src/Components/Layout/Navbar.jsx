@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { getSession } from "../../api/auth";
+import { getHomePath, getSession } from "../../api/auth";
 
 const Navbar = () => {
   const session = getSession();
@@ -8,7 +8,7 @@ const Navbar = () => {
     <header className="sticky top-0 z-20 mb-6">
       <div className="rounded-2xl border border-white/50 bg-white/60 backdrop-blur-md shadow-[0_8px_24px_rgba(96,119,150,0.12)] px-4 py-3 sm:px-5">
         <div className="flex items-center justify-between gap-4">
-          <Link to="/admin" className="flex items-center gap-3 min-w-0">
+          <Link to={getHomePath(session)} className="flex items-center gap-3 min-w-0">
             <img
               src="/img/logo.png"
               alt="Lalawigan ng Marinduque"

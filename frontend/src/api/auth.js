@@ -23,6 +23,16 @@ export const clearSession = () => {
 export const isAdmin = (session = getSession()) =>
   session?.role === "ADMIN";
 
+export const isRecordOffice = (session = getSession()) =>
+  session?.role === "RecordOffice";
+
+export const getHomePath = (session = getSession()) => {
+  if (!session) return "/login";
+  if (session.role === "ADMIN") return "/admin";
+  if (session.role === "RecordOffice") return "/record-office";
+  return "/";
+};
+
 export const loginWithCredentials = async (email, password) => {
   const { data: profile, error } = await supabase
     .from("profiles")

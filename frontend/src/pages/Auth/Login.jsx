@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { loginWithCredentials } from "../../api/auth";
+import { getHomePath, loginWithCredentials } from "../../api/auth";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,12 +32,7 @@ const Login = () => {
     try {
       const session = await loginWithCredentials(form.email, form.password);
       toast.success(`Welcome back, ${session.fullName}`);
-
-      if (session.role === "ADMIN") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+      navigate(getHomePath(session), { replace: true });
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
