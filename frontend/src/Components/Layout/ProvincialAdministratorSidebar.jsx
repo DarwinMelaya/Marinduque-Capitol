@@ -28,8 +28,8 @@ const ProvincialAdministratorSidebar = () => {
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className="relative hidden md:block w-64 shrink-0 min-h-screen p-3">
+      {/* Desktop sidebar — fixed while page content scrolls */}
+      <aside className="relative hidden md:flex w-64 shrink-0 h-full p-3">
         <div className="absolute inset-3 rounded-2xl overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -39,7 +39,7 @@ const ProvincialAdministratorSidebar = () => {
           <div className="absolute inset-0 backdrop-blur-xl bg-white/5 border border-white/20 rounded-2xl shadow-2xl" />
         </div>
 
-        <div className="relative z-10 h-full min-h-[calc(100vh-1.5rem)] flex flex-col text-white rounded-2xl overflow-hidden">
+        <div className="relative z-10 h-full w-full flex flex-col text-white rounded-2xl overflow-hidden">
           <div className="px-5 py-6 border-b border-white/15">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 border border-[#a6a08a]/40 backdrop-blur-sm">
