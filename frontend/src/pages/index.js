@@ -19,3 +19,7 @@ export { default as ProvincialAdministratorRecords } from "./ProvincialAdministr
 // Budget Office
 export { default as BudgetOfficeDashboard } from "./BudgetOffice/BudgetOfficeDashboard";
 export { default as BudgetOfficeRecords } from "./BudgetOffice/BudgetOfficeRecords";
+
+// Governor Office
+export { default as GovernorOfficeDashboard } from "./GovernorOffice/GovernorOfficeDashboard";
+export { default as GovernorOfficeRecords } from "./GovernorOffice/GovernorOfficeRecords";

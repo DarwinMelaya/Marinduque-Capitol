@@ -62,6 +62,9 @@ export const isProvincialAdministrator = (session = getSession()) =>
 export const isBudgetOffice = (session = getSession()) =>
   session?.role === "BudgetOffice";
 
+export const isGovernorOffice = (session = getSession()) =>
+  session?.role === "GovernorOffice";
+
 export const getHomePath = (session = getSession()) => {
   if (!session) return "/login";
   if (session.role === "ADMIN") return "/admin";
@@ -70,6 +73,7 @@ export const getHomePath = (session = getSession()) => {
     return "/provincial-administrator";
   }
   if (session.role === "BudgetOffice") return "/budget-office";
+  if (session.role === "GovernorOffice") return "/governor-office";
   return "/";
 };
 

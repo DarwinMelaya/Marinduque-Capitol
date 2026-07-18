@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import {
   getSession,
   isBudgetOffice,
+  isGovernorOffice,
   isProvincialAdministrator,
   isRecordOffice,
 } from "../../api/auth";
@@ -9,6 +10,7 @@ import AdminSidebar from "./AdminSidebar";
 import RecordSidebar from "./RecordSidebar";
 import ProvincialAdministratorSidebar from "./ProvincialAdministratorSidebar";
 import BudgetOfficeSidebar from "./BudgetOfficeSidebar";
+import GovernorOfficeSidebar from "./GovernorOfficeSidebar";
 import Navbar from "./Navbar";
 
 const Layout = () => {
@@ -20,6 +22,8 @@ const Layout = () => {
     Sidebar = ProvincialAdministratorSidebar;
   } else if (isBudgetOffice(session)) {
     Sidebar = BudgetOfficeSidebar;
+  } else if (isGovernorOffice(session)) {
+    Sidebar = GovernorOfficeSidebar;
   }
 
   return (
