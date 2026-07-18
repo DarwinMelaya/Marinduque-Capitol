@@ -244,9 +244,14 @@ export const forwardToProvincialAdministrator = async (id) => {
 };
 
 /** Provincial Administrator confirms receipt of a forwarded document. */
-export const receiveAtProvincialAdministrator = async (id) => {
+export const receiveAtProvincialAdministrator = async (id, receivedByName) => {
   if (!id) {
     throw new Error("Document id is required.");
+  }
+
+  const trimmedReceiver = receivedByName?.trim();
+  if (!trimmedReceiver) {
+    throw new Error("Please enter who received the document.");
   }
 
   const { data: existing, error: fetchError } = await supabase
@@ -278,7 +283,7 @@ export const receiveAtProvincialAdministrator = async (id) => {
       status: DOCUMENT_STATUS.RECEIVED,
       current_location: DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR,
       received_by_id: session.id,
-      received_by_name: session.fullName || session.email || "Unknown",
+      received_by_name: trimmedReceiver,
       received_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
