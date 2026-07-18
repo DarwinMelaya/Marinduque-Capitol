@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
+  DOCUMENT_LOCATION,
+  DOCUMENT_STATUS,
+  forwardToGovernorOffice,
   listBudgetOfficeDocuments,
   statusLabel,
 } from "../../api/documents";
@@ -21,6 +24,7 @@ const BudgetOfficeRecords = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scanOpen, setScanOpen] = useState(false);
+  const [forwardingId, setForwardingId] = useState(null);
 
   const loadDocuments = async () => {
     setLoading(true);
@@ -46,6 +50,30 @@ const BudgetOfficeRecords = () => {
       }
       return [updated, ...prev];
     });
+  };
+
+  const handleForwardToGovernor = async (doc) => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Forward "${doc.subject}" to ${DOCUMENT_LOCATION.GOVERNOR_OFFICE}?`,
+      )
+    ) {
+      return;
+    }
+
+    setForwardingId(doc.id);
+    try {
+      const updated = await forwardToGovernorOffice(doc.id);
+      toast.success(`Forwarded to ${DOCUMENT_LOCATION.GOVERNOR_OFFICE}.`);
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === updated.id ? updated : d)),
+      );
+    } catch (err) {
+      toast.error(err.message || "Failed to forward document.");
+    } finally {
+      setForwardingId(null);
+    }
   };
 
   return (
@@ -107,7 +135,8 @@ const BudgetOfficeRecords = () => {
                   <th className="pb-2 pr-4 font-semibold">Sender</th>
                   <th className="pb-2 pr-4 font-semibold">Date</th>
                   <th className="pb-2 pr-4 font-semibold">Status</th>
-                  <th className="pb-2 font-semibold">Received by</th>
+                  <th className="pb-2 pr-4 font-semibold">Received by</th>
+                  <th className="pb-2 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -133,8 +162,26 @@ const BudgetOfficeRecords = () => {
                         {statusLabel(doc.status)}
                       </span>
                     </td>
-                    <td className="py-3 text-on-surface-variant">
+                    <td className="py-3 pr-4 text-on-surface-variant">
                       {doc.receivedByName || "—"}
+                    </td>
+                    <td className="py-3 text-right">
+                      {doc.status === DOCUMENT_STATUS.PROCESSING && (
+                        <button
+                          type="button"
+                          onClick={() => handleForwardToGovernor(doc)}
+                          disabled={forwardingId === doc.id}
+                          className="inline-flex items-center gap-1 rounded-md bg-[#607796] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#4d627c] disabled:opacity-50"
+                          title="Forward to Governor Office"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            send
+                          </span>
+                          {forwardingId === doc.id
+                            ? "Forwarding..."
+                            : "Forward to Governor"}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

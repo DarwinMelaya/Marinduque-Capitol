@@ -6,6 +6,7 @@ import {
   createDocument,
   forwardToProvincialAdministrator,
   listDocuments,
+  receiveSignedAtRecordOffice,
   statusLabel,
 } from "../../api/documents";
 import ViewRecord from "../../Components/Modals/RecordOffice/ViewRecord";
@@ -46,6 +47,7 @@ const RecordRecording = () => {
   const [viewingDoc, setViewingDoc] = useState(null);
   const [editingDoc, setEditingDoc] = useState(null);
   const [forwardingId, setForwardingId] = useState(null);
+  const [releasingId, setReleasingId] = useState(null);
 
   const loadDocuments = async () => {
     setLoadingList(true);
@@ -152,6 +154,25 @@ const RecordRecording = () => {
       toast.error(err.message || "Failed to forward document.");
     } finally {
       setForwardingId(null);
+    }
+  };
+
+  const handleReceiveSigned = async (doc) => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(`Receive signed "${doc.subject}" and mark as Completed?`)
+    ) {
+      return;
+    }
+    setReleasingId(doc.id);
+    try {
+      const updated = await receiveSignedAtRecordOffice(doc.id);
+      toast.success("Signed document received — Completed.");
+      handleDocumentSaved(updated);
+    } catch (err) {
+      toast.error(err.message || "Failed to receive signed document.");
+    } finally {
+      setReleasingId(null);
     }
   };
 
@@ -497,6 +518,22 @@ const RecordRecording = () => {
                               send
                             </span>
                             {forwardingId === doc.id ? "..." : "Forward"}
+                          </button>
+                        )}
+                        {doc.status === DOCUMENT_STATUS.APPROVED && (
+                          <button
+                            type="button"
+                            onClick={() => handleReceiveSigned(doc)}
+                            disabled={releasingId === doc.id}
+                            className="inline-flex items-center gap-1 rounded-md bg-[#2f7a4d] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#276641] disabled:opacity-50"
+                            title="Receive signed document (mark Completed)"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">
+                              task_alt
+                            </span>
+                            {releasingId === doc.id
+                              ? "Receiving..."
+                              : "Receive signed"}
                           </button>
                         )}
                       </div>

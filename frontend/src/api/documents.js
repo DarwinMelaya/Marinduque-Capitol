@@ -7,12 +7,16 @@ export const DOCUMENT_STATUS = {
   UNDER_REVIEW: "UNDER_REVIEW",
   RETURNED: "RETURNED",
   PROCESSING: "PROCESSING",
+  FOR_SIGNATURE: "FOR_SIGNATURE",
+  APPROVED: "APPROVED",
+  COMPLETED: "COMPLETED",
 };
 
 export const DOCUMENT_LOCATION = {
   RECORD_OFFICE: "Record Office",
   PROVINCIAL_ADMINISTRATOR: "Provincial Administrator",
   BUDGET_OFFICE: "Budget Office",
+  GOVERNOR_OFFICE: "Governor Office",
 };
 
 export const statusLabel = (status) => {
@@ -21,6 +25,9 @@ export const statusLabel = (status) => {
   if (status === DOCUMENT_STATUS.UNDER_REVIEW) return "Under Review";
   if (status === DOCUMENT_STATUS.RETURNED) return "Returned";
   if (status === DOCUMENT_STATUS.PROCESSING) return "Processing";
+  if (status === DOCUMENT_STATUS.FOR_SIGNATURE) return "For Signature";
+  if (status === DOCUMENT_STATUS.APPROVED) return "Approved";
+  if (status === DOCUMENT_STATUS.COMPLETED) return "Completed";
   return status || "—";
 };
 
@@ -99,6 +106,21 @@ export const listBudgetOfficeDocuments = async () => {
     .from("documents")
     .select(DOCUMENT_SELECT)
     .eq("current_location", DOCUMENT_LOCATION.BUDGET_OFFICE)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message || "Unable to load documents.");
+  }
+
+  return (data ?? []).map(mapDocument);
+};
+
+/** Documents forwarded to Governor Office and awaiting receive, plus those already there. */
+export const listGovernorOfficeDocuments = async () => {
+  const { data, error } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("current_location", DOCUMENT_LOCATION.GOVERNOR_OFFICE)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -465,6 +487,196 @@ export const receiveAtBudgetOffice = async (id, receivedByName) => {
 
   if (error) {
     throw new Error(error.message || "Failed to receive document.");
+  }
+
+  return mapDocument(data);
+};
+
+/** Budget Office → Governor Office (awaiting Governor Office receive). */
+export const forwardToGovernorOffice = async (id) => {
+  if (!id) {
+    throw new Error("Document id is required.");
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message || "Unable to load document.");
+  }
+
+  if (!existing) {
+    throw new Error("Document not found.");
+  }
+
+  if (existing.current_location !== DOCUMENT_LOCATION.BUDGET_OFFICE) {
+    throw new Error(
+      "Only documents at Budget Office can be forwarded to Governor Office.",
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({
+      status: DOCUMENT_STATUS.FORWARDED,
+      current_location: DOCUMENT_LOCATION.GOVERNOR_OFFICE,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(DOCUMENT_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to forward document.");
+  }
+
+  return mapDocument(data);
+};
+
+/** Governor Office confirms receipt of a forwarded document (queues for signature). */
+export const receiveAtGovernorOffice = async (id, receivedByName) => {
+  if (!id) {
+    throw new Error("Document id is required.");
+  }
+
+  const trimmedReceiver = receivedByName?.trim();
+  if (!trimmedReceiver) {
+    throw new Error("Please enter who received the document.");
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message || "Unable to load document.");
+  }
+
+  if (!existing) {
+    throw new Error("Document not found.");
+  }
+
+  if (
+    existing.status !== DOCUMENT_STATUS.FORWARDED ||
+    existing.current_location !== DOCUMENT_LOCATION.GOVERNOR_OFFICE
+  ) {
+    throw new Error(
+      "Only documents forwarded to Governor Office can be received.",
+    );
+  }
+
+  const session = getSession();
+  if (!session?.id) {
+    throw new Error("You must be signed in to receive a document.");
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({
+      status: DOCUMENT_STATUS.FOR_SIGNATURE,
+      current_location: DOCUMENT_LOCATION.GOVERNOR_OFFICE,
+      received_by_id: session.id,
+      received_by_name: trimmedReceiver,
+      received_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(DOCUMENT_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to receive document.");
+  }
+
+  return mapDocument(data);
+};
+
+/** Governor signs the document (For Signature → Approved). */
+export const signAtGovernorOffice = async (id) => {
+  if (!id) {
+    throw new Error("Document id is required.");
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message || "Unable to load document.");
+  }
+
+  if (!existing) {
+    throw new Error("Document not found.");
+  }
+
+  if (
+    existing.status !== DOCUMENT_STATUS.FOR_SIGNATURE ||
+    existing.current_location !== DOCUMENT_LOCATION.GOVERNOR_OFFICE
+  ) {
+    throw new Error("Only documents for signature can be signed.");
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({
+      status: DOCUMENT_STATUS.APPROVED,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(DOCUMENT_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to sign document.");
+  }
+
+  return mapDocument(data);
+};
+
+/** Release: Record Office receives the signed document (Approved → Completed). */
+export const receiveSignedAtRecordOffice = async (id) => {
+  if (!id) {
+    throw new Error("Document id is required.");
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message || "Unable to load document.");
+  }
+
+  if (!existing) {
+    throw new Error("Document not found.");
+  }
+
+  if (existing.status !== DOCUMENT_STATUS.APPROVED) {
+    throw new Error("Only approved (signed) documents can be released.");
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({
+      status: DOCUMENT_STATUS.COMPLETED,
+      current_location: DOCUMENT_LOCATION.RECORD_OFFICE,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(DOCUMENT_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to release document.");
   }
 
   return mapDocument(data);
