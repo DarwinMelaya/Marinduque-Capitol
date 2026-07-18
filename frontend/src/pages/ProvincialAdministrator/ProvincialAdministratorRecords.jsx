@@ -5,6 +5,7 @@ import {
   DOCUMENT_STATUS,
   listProvincialAdministratorDocuments,
   receiveAtProvincialAdministrator,
+  returnToRecordOffice,
   statusLabel,
 } from "../../api/documents";
 import { getSession } from "../../api/auth";
@@ -29,6 +30,7 @@ const ProvincialAdministratorRecords = () => {
   const [tab, setTab] = useState("incoming");
   const [receiveTarget, setReceiveTarget] = useState(null);
   const [receiverName, setReceiverName] = useState("");
+  const [returningId, setReturningId] = useState(null);
 
   const loadDocuments = async () => {
     setLoading(true);
@@ -103,6 +105,31 @@ const ProvincialAdministratorRecords = () => {
       toast.error(err.message || "Failed to receive document.");
     } finally {
       setReceivingId(null);
+    }
+  };
+
+  const handleReturn = async (doc) => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Return "${doc.subject}" back to ${DOCUMENT_LOCATION.RECORD_OFFICE}?`,
+      )
+    ) {
+      return;
+    }
+
+    setReturningId(doc.id);
+    try {
+      const updated = await returnToRecordOffice(doc.id);
+      toast.success(`Returned to ${DOCUMENT_LOCATION.RECORD_OFFICE}.`);
+      setDocuments((prev) =>
+        prev.map((row) => (row.id === updated.id ? updated : row)),
+      );
+      setViewingDoc((prev) => (prev?.id === updated.id ? updated : prev));
+    } catch (err) {
+      toast.error(err.message || "Failed to return document.");
+    } finally {
+      setReturningId(null);
     }
   };
 
@@ -234,6 +261,21 @@ const ProvincialAdministratorRecords = () => {
                               move_to_inbox
                             </span>
                             {receivingId === doc.id ? "Receiving..." : "Receive"}
+                          </button>
+                        )}
+                        {doc.currentLocation ===
+                          DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR && (
+                          <button
+                            type="button"
+                            onClick={() => handleReturn(doc)}
+                            disabled={returningId === doc.id}
+                            className="inline-flex items-center gap-1 rounded-md border border-[#b8894a]/40 bg-[#b8894a]/10 px-2.5 py-1.5 text-xs font-semibold text-[#8a5f2b] hover:bg-[#b8894a]/20 disabled:opacity-50"
+                            title="Return to Record Office"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">
+                              undo
+                            </span>
+                            {returningId === doc.id ? "Returning..." : "Return"}
                           </button>
                         )}
                       </div>

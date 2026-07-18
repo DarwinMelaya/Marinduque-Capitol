@@ -137,7 +137,8 @@ const RecordRecording = () => {
   };
 
   const canForward = (doc) =>
-    doc.status === DOCUMENT_STATUS.RECEIVED &&
+    (doc.status === DOCUMENT_STATUS.RECEIVED ||
+      doc.status === DOCUMENT_STATUS.RETURNED) &&
     doc.currentLocation === DOCUMENT_LOCATION.RECORD_OFFICE;
 
   const handleForward = async (doc) => {

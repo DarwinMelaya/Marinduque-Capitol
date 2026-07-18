@@ -4,6 +4,8 @@ import { getSession } from "./auth";
 export const DOCUMENT_STATUS = {
   RECEIVED: "RECEIVED",
   FORWARDED: "FORWARDED",
+  UNDER_REVIEW: "UNDER_REVIEW",
+  RETURNED: "RETURNED",
 };
 
 export const DOCUMENT_LOCATION = {
@@ -14,6 +16,8 @@ export const DOCUMENT_LOCATION = {
 export const statusLabel = (status) => {
   if (status === DOCUMENT_STATUS.FORWARDED) return "Forwarded";
   if (status === DOCUMENT_STATUS.RECEIVED) return "Received";
+  if (status === DOCUMENT_STATUS.UNDER_REVIEW) return "Under Review";
+  if (status === DOCUMENT_STATUS.RETURNED) return "Returned";
   return status || "—";
 };
 
@@ -280,7 +284,7 @@ export const receiveAtProvincialAdministrator = async (id, receivedByName) => {
   const { data, error } = await supabase
     .from("documents")
     .update({
-      status: DOCUMENT_STATUS.RECEIVED,
+      status: DOCUMENT_STATUS.UNDER_REVIEW,
       current_location: DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR,
       received_by_id: session.id,
       received_by_name: trimmedReceiver,
@@ -293,6 +297,52 @@ export const receiveAtProvincialAdministrator = async (id, receivedByName) => {
 
   if (error) {
     throw new Error(error.message || "Failed to receive document.");
+  }
+
+  return mapDocument(data);
+};
+
+/** Provincial Administrator returns a received document back to Record Office. */
+export const returnToRecordOffice = async (id) => {
+  if (!id) {
+    throw new Error("Document id is required.");
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message || "Unable to load document.");
+  }
+
+  if (!existing) {
+    throw new Error("Document not found.");
+  }
+
+  if (
+    existing.current_location !== DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR
+  ) {
+    throw new Error(
+      "Only documents currently at Provincial Administrator can be returned.",
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({
+      status: DOCUMENT_STATUS.RETURNED,
+      current_location: DOCUMENT_LOCATION.RECORD_OFFICE,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(DOCUMENT_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to return document.");
   }
 
   return mapDocument(data);

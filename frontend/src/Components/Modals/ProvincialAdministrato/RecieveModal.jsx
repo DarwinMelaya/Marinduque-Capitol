@@ -81,6 +81,7 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
   const [receiving, setReceiving] = useState(false);
   const [error, setError] = useState(null);
   const [foundDoc, setFoundDoc] = useState(null);
+  const [receiverName, setReceiverName] = useState("");
   const [cameraError, setCameraError] = useState(null);
   const [scanning, setScanning] = useState(false);
 
@@ -121,6 +122,7 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
       }
       setFoundDoc(doc);
       setCode(doc.transactionCode);
+      setReceiverName(getSession()?.fullName || "");
     } catch (err) {
       setError(err.message || "Unable to look up document.");
     } finally {
@@ -186,6 +188,7 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
       setMode("scan");
       setCode("");
       setFoundDoc(null);
+      setReceiverName("");
       setError(null);
       setCameraError(null);
       handlingScanRef.current = false;
@@ -218,7 +221,6 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
 
   if (!open) return null;
 
-  const session = getSession();
   const canReceive = foundDoc?.status === DOCUMENT_STATUS.FORWARDED;
 
   const handleManualLookup = async (e) => {
@@ -228,13 +230,16 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
 
   const handleReceive = async () => {
     if (!foundDoc || !canReceive) return;
+    const name = receiverName.trim();
+    if (!name) {
+      setError("Please enter who received the document.");
+      return;
+    }
     setReceiving(true);
     setError(null);
     try {
-      const updated = await receiveAtProvincialAdministrator(foundDoc.id);
-      toast.success(
-        `Received — now at ${DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR}`,
-      );
+      const updated = await receiveAtProvincialAdministrator(foundDoc.id, name);
+      toast.success(`Received by ${updated.receivedByName} — Under Review`);
       onReceived?.(updated);
       onClose?.();
     } catch (err) {
@@ -246,6 +251,7 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
 
   const handleClearFound = () => {
     setFoundDoc(null);
+    setReceiverName("");
     setError(null);
     if (mode === "scan") {
       // restart via effect
@@ -481,12 +487,29 @@ const RecieveModal = ({ open, onClose, onReceived }) => {
             )}
 
             {canReceive && (
-              <p className="text-sm text-on-surface-variant">
-                Receiving as{" "}
-                <span className="font-semibold text-[#3f5168]">
-                  {session?.fullName || session?.email || "signed-in user"}
-                </span>
-              </p>
+              <div>
+                <label
+                  htmlFor="receive-received-by"
+                  className="text-xs font-semibold uppercase tracking-wider text-[#a6a08a]"
+                >
+                  Received by
+                </label>
+                <input
+                  id="receive-received-by"
+                  type="text"
+                  value={receiverName}
+                  onChange={(e) => {
+                    setError(null);
+                    setReceiverName(e.target.value);
+                  }}
+                  placeholder="Full name of the person who received"
+                  className="mt-1 block w-full rounded-md border border-[#607796]/25 bg-white px-3 py-2.5 text-sm text-[#3f5168] placeholder:text-[#a6a08a]/80 focus:outline-none focus:ring-2 focus:ring-[#607796]/40 focus:border-[#607796]"
+                />
+                <p className="mt-1.5 text-xs text-on-surface-variant">
+                  Status becomes Under Review and the date/time is recorded on
+                  confirm.
+                </p>
+              </div>
             )}
 
             <div className="flex flex-wrap gap-2 justify-end">
