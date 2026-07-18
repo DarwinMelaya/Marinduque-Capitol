@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import {
   DOCUMENT_LOCATION,
   DOCUMENT_STATUS,
+  forwardToBudgetOffice,
   listProvincialAdministratorDocuments,
   receiveAtProvincialAdministrator,
   returnToRecordOffice,
@@ -31,6 +32,7 @@ const ProvincialAdministratorRecords = () => {
   const [receiveTarget, setReceiveTarget] = useState(null);
   const [receiverName, setReceiverName] = useState("");
   const [returningId, setReturningId] = useState(null);
+  const [forwardingId, setForwardingId] = useState(null);
 
   const loadDocuments = async () => {
     setLoading(true);
@@ -130,6 +132,31 @@ const ProvincialAdministratorRecords = () => {
       toast.error(err.message || "Failed to return document.");
     } finally {
       setReturningId(null);
+    }
+  };
+
+  const handleForwardToBudget = async (doc) => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Forward "${doc.subject}" to ${DOCUMENT_LOCATION.BUDGET_OFFICE}?`,
+      )
+    ) {
+      return;
+    }
+
+    setForwardingId(doc.id);
+    try {
+      const updated = await forwardToBudgetOffice(doc.id);
+      toast.success(`Forwarded to ${DOCUMENT_LOCATION.BUDGET_OFFICE}.`);
+      setDocuments((prev) =>
+        prev.map((row) => (row.id === updated.id ? updated : row)),
+      );
+      setViewingDoc((prev) => (prev?.id === updated.id ? updated : prev));
+    } catch (err) {
+      toast.error(err.message || "Failed to forward document.");
+    } finally {
+      setForwardingId(null);
     }
   };
 
@@ -276,6 +303,23 @@ const ProvincialAdministratorRecords = () => {
                               undo
                             </span>
                             {returningId === doc.id ? "Returning..." : "Return"}
+                          </button>
+                        )}
+                        {doc.currentLocation ===
+                          DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR && (
+                          <button
+                            type="button"
+                            onClick={() => handleForwardToBudget(doc)}
+                            disabled={forwardingId === doc.id}
+                            className="inline-flex items-center gap-1 rounded-md bg-[#607796] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#4d627c] disabled:opacity-50"
+                            title="Forward to Budget Office"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">
+                              send
+                            </span>
+                            {forwardingId === doc.id
+                              ? "Forwarding..."
+                              : "Forward to Budget"}
                           </button>
                         )}
                       </div>

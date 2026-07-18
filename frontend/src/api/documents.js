@@ -6,11 +6,13 @@ export const DOCUMENT_STATUS = {
   FORWARDED: "FORWARDED",
   UNDER_REVIEW: "UNDER_REVIEW",
   RETURNED: "RETURNED",
+  PROCESSING: "PROCESSING",
 };
 
 export const DOCUMENT_LOCATION = {
   RECORD_OFFICE: "Record Office",
   PROVINCIAL_ADMINISTRATOR: "Provincial Administrator",
+  BUDGET_OFFICE: "Budget Office",
 };
 
 export const statusLabel = (status) => {
@@ -18,6 +20,7 @@ export const statusLabel = (status) => {
   if (status === DOCUMENT_STATUS.RECEIVED) return "Received";
   if (status === DOCUMENT_STATUS.UNDER_REVIEW) return "Under Review";
   if (status === DOCUMENT_STATUS.RETURNED) return "Returned";
+  if (status === DOCUMENT_STATUS.PROCESSING) return "Processing";
   return status || "—";
 };
 
@@ -79,8 +82,23 @@ export const listProvincialAdministratorDocuments = async () => {
     .from("documents")
     .select(DOCUMENT_SELECT)
     .or(
-      `status.eq.${DOCUMENT_STATUS.FORWARDED},current_location.eq."${DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR}"`,
+      `and(status.eq.${DOCUMENT_STATUS.FORWARDED},current_location.eq."${DOCUMENT_LOCATION.RECORD_OFFICE}"),current_location.eq."${DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR}"`,
     )
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message || "Unable to load documents.");
+  }
+
+  return (data ?? []).map(mapDocument);
+};
+
+/** Documents forwarded to Budget Office and awaiting receive, plus those already there. */
+export const listBudgetOfficeDocuments = async () => {
+  const { data, error } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("current_location", DOCUMENT_LOCATION.BUDGET_OFFICE)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -343,6 +361,110 @@ export const returnToRecordOffice = async (id) => {
 
   if (error) {
     throw new Error(error.message || "Failed to return document.");
+  }
+
+  return mapDocument(data);
+};
+
+/** Provincial Administrator → Budget Office (awaiting Budget Office receive). */
+export const forwardToBudgetOffice = async (id) => {
+  if (!id) {
+    throw new Error("Document id is required.");
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message || "Unable to load document.");
+  }
+
+  if (!existing) {
+    throw new Error("Document not found.");
+  }
+
+  if (
+    existing.current_location !== DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR
+  ) {
+    throw new Error(
+      "Only documents at Provincial Administrator can be forwarded to Budget Office.",
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({
+      status: DOCUMENT_STATUS.FORWARDED,
+      current_location: DOCUMENT_LOCATION.BUDGET_OFFICE,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(DOCUMENT_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to forward document.");
+  }
+
+  return mapDocument(data);
+};
+
+/** Budget Office confirms receipt of a forwarded document (starts processing). */
+export const receiveAtBudgetOffice = async (id, receivedByName) => {
+  if (!id) {
+    throw new Error("Document id is required.");
+  }
+
+  const trimmedReceiver = receivedByName?.trim();
+  if (!trimmedReceiver) {
+    throw new Error("Please enter who received the document.");
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("documents")
+    .select(DOCUMENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message || "Unable to load document.");
+  }
+
+  if (!existing) {
+    throw new Error("Document not found.");
+  }
+
+  if (
+    existing.status !== DOCUMENT_STATUS.FORWARDED ||
+    existing.current_location !== DOCUMENT_LOCATION.BUDGET_OFFICE
+  ) {
+    throw new Error("Only documents forwarded to Budget Office can be received.");
+  }
+
+  const session = getSession();
+  if (!session?.id) {
+    throw new Error("You must be signed in to receive a document.");
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({
+      status: DOCUMENT_STATUS.PROCESSING,
+      current_location: DOCUMENT_LOCATION.BUDGET_OFFICE,
+      received_by_id: session.id,
+      received_by_name: trimmedReceiver,
+      received_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(DOCUMENT_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to receive document.");
   }
 
   return mapDocument(data);
