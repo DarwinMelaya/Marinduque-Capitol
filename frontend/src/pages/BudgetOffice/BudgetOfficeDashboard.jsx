@@ -6,15 +6,14 @@ import {
   listBudgetOfficeDocuments,
   receiveAtBudgetOffice,
 } from "../../api/documents";
-import { getSession } from "../../api/auth";
+import { replaceById, upsertById } from "../../Utils/documentHelpers";
+import { useReceiveFlow } from "../../hooks/useReceiveFlow";
 import RecieveModal from "../../Components/Modals/BudgetOffice/RecieveModal";
+import ReceiveConfirmModal from "../../Components/Modals/ReceiveConfirmModal";
 
 const BudgetOfficeDashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [receiveTarget, setReceiveTarget] = useState(null);
-  const [receiverName, setReceiverName] = useState("");
-  const [receivingId, setReceivingId] = useState(null);
   const [scanOpen, setScanOpen] = useState(false);
 
   const loadDocuments = useCallback(async () => {
@@ -65,52 +64,15 @@ const BudgetOfficeDashboard = () => {
     },
   ];
 
-  const openReceive = (doc) => {
-    const session = getSession();
-    setReceiverName(session?.fullName || "");
-    setReceiveTarget(doc);
-  };
-
-  const closeReceive = () => {
-    if (receivingId) return;
-    setReceiveTarget(null);
-    setReceiverName("");
-  };
-
-  const confirmReceive = async (event) => {
-    event?.preventDefault();
-    if (!receiveTarget) return;
-
-    const name = receiverName.trim();
-    if (!name) {
-      toast.error("Please enter who received the document.");
-      return;
-    }
-
-    setReceivingId(receiveTarget.id);
-    try {
-      const updated = await receiveAtBudgetOffice(receiveTarget.id, name);
-      toast.success(`Received by ${updated.receivedByName} — Processing`);
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === updated.id ? updated : d)),
-      );
-      setReceiveTarget(null);
-      setReceiverName("");
-    } catch (err) {
-      toast.error(err.message || "Failed to receive document.");
-    } finally {
-      setReceivingId(null);
-    }
-  };
+  const receive = useReceiveFlow({
+    receiveFn: receiveAtBudgetOffice,
+    onReceived: (updated) =>
+      setDocuments((prev) => replaceById(prev, updated)),
+    successMessage: (doc) => `Received by ${doc.receivedByName} — Processing`,
+  });
 
   const handleScanReceived = (updated) => {
-    setDocuments((prev) => {
-      const exists = prev.some((d) => d.id === updated.id);
-      if (exists) {
-        return prev.map((d) => (d.id === updated.id ? updated : d));
-      }
-      return [updated, ...prev];
-    });
+    setDocuments((prev) => upsertById(prev, updated));
   };
 
   return (
@@ -234,14 +196,14 @@ const BudgetOfficeDashboard = () => {
                     <td className="py-3 text-right">
                       <button
                         type="button"
-                        onClick={() => openReceive(doc)}
-                        disabled={receivingId === doc.id}
+                        onClick={() => receive.open(doc)}
+                        disabled={receive.isReceiving(doc.id)}
                         className="inline-flex items-center gap-1 rounded-md bg-[#607796] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#4d627c] disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-[16px]">
                           move_to_inbox
                         </span>
-                        {receivingId === doc.id ? "Receiving..." : "Receive"}
+                        {receive.isReceiving(doc.id) ? "Receiving..." : "Receive"}
                       </button>
                     </td>
                   </tr>
@@ -258,60 +220,21 @@ const BudgetOfficeDashboard = () => {
         onReceived={handleScanReceived}
       />
 
-      {receiveTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <form
-            onSubmit={confirmReceive}
-            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-          >
-            <h2 className="text-lg font-bold text-[#607796]">
-              Receive document
-            </h2>
-            <p className="mt-1 text-sm text-on-surface-variant">
-              {receiveTarget.transactionCode} — {receiveTarget.subject}
-            </p>
-
-            <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[#a6a08a]">
-              Received by
-            </label>
-            <input
-              type="text"
-              autoFocus
-              value={receiverName}
-              onChange={(e) => setReceiverName(e.target.value)}
-              placeholder="Full name of the person who received"
-              className="mt-1 w-full rounded-md border border-[#607796]/25 px-3 py-2 text-sm text-[#3f5168] focus:border-[#607796] focus:outline-none"
-            />
-
-            <p className="mt-3 text-xs text-on-surface-variant">
-              On confirm: status becomes{" "}
-              <span className="font-semibold text-[#3f5168]">Processing</span>{" "}
-              and the date/time is recorded.
-            </p>
-
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeReceive}
-                disabled={Boolean(receivingId)}
-                className="rounded-md border border-[#607796]/20 px-3 py-1.5 text-xs font-semibold text-[#607796] hover:bg-[#607796]/5 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={Boolean(receivingId)}
-                className="inline-flex items-center gap-1 rounded-md bg-[#607796] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#4d627c] disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  move_to_inbox
-                </span>
-                {receivingId ? "Receiving..." : "Confirm receive"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <ReceiveConfirmModal
+        document={receive.target}
+        receiverName={receive.receiverName}
+        onReceiverNameChange={receive.setReceiverName}
+        onSubmit={receive.confirm}
+        onCancel={receive.close}
+        submitting={receive.submitting}
+        statusNote={
+          <>
+            On confirm: status becomes{" "}
+            <span className="font-semibold text-[#3f5168]">Processing</span> and
+            the date/time is recorded.
+          </>
+        }
+      />
     </div>
   );
 };

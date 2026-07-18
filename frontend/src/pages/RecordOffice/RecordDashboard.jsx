@@ -8,32 +8,8 @@ import {
   statusLabel,
 } from "../../api/documents";
 import { getSession } from "../../api/auth";
+import { formatDate, formatRelative } from "../../Utils/documentHelpers";
 import ViewRecord from "../../Components/Modals/RecordOffice/ViewRecord";
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-const formatRelative = (value) => {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
-  const diffMs = Date.now() - d.getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-};
 
 // 0 Record Office · 1 Prov. Admin · 2 Budget Office · 3 Governor · 4 Completed
 const JOURNEY_STEPS = 5;

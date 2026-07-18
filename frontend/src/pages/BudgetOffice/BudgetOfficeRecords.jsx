@@ -7,18 +7,8 @@ import {
   listBudgetOfficeDocuments,
   statusLabel,
 } from "../../api/documents";
+import { formatDate, replaceById, upsertById } from "../../Utils/documentHelpers";
 import RecieveModal from "../../Components/Modals/BudgetOffice/RecieveModal";
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const BudgetOfficeRecords = () => {
   const [documents, setDocuments] = useState([]);
@@ -43,13 +33,7 @@ const BudgetOfficeRecords = () => {
   }, []);
 
   const handleReceived = (updated) => {
-    setDocuments((prev) => {
-      const exists = prev.some((d) => d.id === updated.id);
-      if (exists) {
-        return prev.map((d) => (d.id === updated.id ? updated : d));
-      }
-      return [updated, ...prev];
-    });
+    setDocuments((prev) => upsertById(prev, updated));
   };
 
   const handleForwardToGovernor = async (doc) => {
@@ -66,9 +50,7 @@ const BudgetOfficeRecords = () => {
     try {
       const updated = await forwardToGovernorOffice(doc.id);
       toast.success(`Forwarded to ${DOCUMENT_LOCATION.GOVERNOR_OFFICE}.`);
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === updated.id ? updated : d)),
-      );
+      setDocuments((prev) => replaceById(prev, updated));
     } catch (err) {
       toast.error(err.message || "Failed to forward document.");
     } finally {

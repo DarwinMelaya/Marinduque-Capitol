@@ -9,22 +9,12 @@ import {
   statusLabel,
 } from "../../../api/documents";
 import { getSession } from "../../../api/auth";
+import { formatDate } from "../../../Utils/documentHelpers";
 
 const SCANNER_REGION_ID = "governor-receive-qr-reader";
 
 const inputClass =
   "mt-1 block w-full rounded-md border border-[#607796]/25 bg-white px-3 py-2.5 text-sm font-mono uppercase tracking-wide text-[#3f5168] placeholder:text-[#a6a08a]/80 placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#607796]/40 focus:border-[#607796]";
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const normalizeCode = (raw) => {
   const text = String(raw || "").trim();

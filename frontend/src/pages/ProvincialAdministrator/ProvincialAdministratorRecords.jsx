@@ -9,28 +9,16 @@ import {
   returnToRecordOffice,
   statusLabel,
 } from "../../api/documents";
-import { getSession } from "../../api/auth";
+import { formatDate, replaceById } from "../../Utils/documentHelpers";
+import { useReceiveFlow } from "../../hooks/useReceiveFlow";
 import ViewRecord from "../../Components/Modals/RecordOffice/ViewRecord";
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
+import ReceiveConfirmModal from "../../Components/Modals/ReceiveConfirmModal";
 
 const ProvincialAdministratorRecords = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [receivingId, setReceivingId] = useState(null);
   const [viewingDoc, setViewingDoc] = useState(null);
   const [tab, setTab] = useState("incoming");
-  const [receiveTarget, setReceiveTarget] = useState(null);
-  const [receiverName, setReceiverName] = useState("");
   const [returningId, setReturningId] = useState(null);
   const [forwardingId, setForwardingId] = useState(null);
 
@@ -66,49 +54,17 @@ const ProvincialAdministratorRecords = () => {
 
   const rows = tab === "incoming" ? incoming : received;
 
-  const openReceive = (doc) => {
-    const session = getSession();
-    setReceiverName(session?.fullName || "");
-    setReceiveTarget(doc);
+  const syncUpdated = (updated) => {
+    setDocuments((prev) => replaceById(prev, updated));
+    setViewingDoc((prev) => (prev?.id === updated.id ? updated : prev));
   };
 
-  const closeReceive = () => {
-    if (receivingId) return;
-    setReceiveTarget(null);
-    setReceiverName("");
-  };
-
-  const handleReceive = async (event) => {
-    event?.preventDefault();
-    if (!receiveTarget) return;
-
-    const name = receiverName.trim();
-    if (!name) {
-      toast.error("Please enter who received the document.");
-      return;
-    }
-
-    setReceivingId(receiveTarget.id);
-    try {
-      const updated = await receiveAtProvincialAdministrator(
-        receiveTarget.id,
-        name,
-      );
-      toast.success(
-        `Received by ${updated.receivedByName} — now at ${DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR}`,
-      );
-      setDocuments((prev) =>
-        prev.map((row) => (row.id === updated.id ? updated : row)),
-      );
-      setViewingDoc((prev) => (prev?.id === updated.id ? updated : prev));
-      setReceiveTarget(null);
-      setReceiverName("");
-    } catch (err) {
-      toast.error(err.message || "Failed to receive document.");
-    } finally {
-      setReceivingId(null);
-    }
-  };
+  const receive = useReceiveFlow({
+    receiveFn: receiveAtProvincialAdministrator,
+    onReceived: syncUpdated,
+    successMessage: (doc) =>
+      `Received by ${doc.receivedByName} — now at ${DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR}`,
+  });
 
   const handleReturn = async (doc) => {
     if (
@@ -124,10 +80,7 @@ const ProvincialAdministratorRecords = () => {
     try {
       const updated = await returnToRecordOffice(doc.id);
       toast.success(`Returned to ${DOCUMENT_LOCATION.RECORD_OFFICE}.`);
-      setDocuments((prev) =>
-        prev.map((row) => (row.id === updated.id ? updated : row)),
-      );
-      setViewingDoc((prev) => (prev?.id === updated.id ? updated : prev));
+      syncUpdated(updated);
     } catch (err) {
       toast.error(err.message || "Failed to return document.");
     } finally {
@@ -149,10 +102,7 @@ const ProvincialAdministratorRecords = () => {
     try {
       const updated = await forwardToBudgetOffice(doc.id);
       toast.success(`Forwarded to ${DOCUMENT_LOCATION.BUDGET_OFFICE}.`);
-      setDocuments((prev) =>
-        prev.map((row) => (row.id === updated.id ? updated : row)),
-      );
-      setViewingDoc((prev) => (prev?.id === updated.id ? updated : prev));
+      syncUpdated(updated);
     } catch (err) {
       toast.error(err.message || "Failed to forward document.");
     } finally {
@@ -279,15 +229,17 @@ const ProvincialAdministratorRecords = () => {
                         {doc.status === DOCUMENT_STATUS.FORWARDED && (
                           <button
                             type="button"
-                            onClick={() => openReceive(doc)}
-                            disabled={receivingId === doc.id}
+                            onClick={() => receive.open(doc)}
+                            disabled={receive.isReceiving(doc.id)}
                             className="inline-flex items-center gap-1 rounded-md bg-[#607796] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#4d627c] disabled:opacity-50"
                             title="Confirm receive"
                           >
                             <span className="material-symbols-outlined text-[16px]">
                               move_to_inbox
                             </span>
-                            {receivingId === doc.id ? "Receiving..." : "Receive"}
+                            {receive.isReceiving(doc.id)
+                              ? "Receiving..."
+                              : "Receive"}
                           </button>
                         )}
                         {doc.currentLocation ===
@@ -338,54 +290,14 @@ const ProvincialAdministratorRecords = () => {
         onClose={() => setViewingDoc(null)}
       />
 
-      {receiveTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <form
-            onSubmit={handleReceive}
-            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-          >
-            <h2 className="text-lg font-bold text-[#607796]">
-              Receive document
-            </h2>
-            <p className="mt-1 text-sm text-on-surface-variant">
-              {receiveTarget.transactionCode} — {receiveTarget.subject}
-            </p>
-
-            <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[#a6a08a]">
-              Received by
-            </label>
-            <input
-              type="text"
-              autoFocus
-              value={receiverName}
-              onChange={(e) => setReceiverName(e.target.value)}
-              placeholder="Full name of the person who received"
-              className="mt-1 w-full rounded-md border border-[#607796]/25 px-3 py-2 text-sm text-[#3f5168] focus:border-[#607796] focus:outline-none"
-            />
-
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeReceive}
-                disabled={Boolean(receivingId)}
-                className="rounded-md border border-[#607796]/20 px-3 py-1.5 text-xs font-semibold text-[#607796] hover:bg-[#607796]/5 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={Boolean(receivingId)}
-                className="inline-flex items-center gap-1 rounded-md bg-[#607796] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#4d627c] disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  move_to_inbox
-                </span>
-                {receivingId ? "Receiving..." : "Confirm receive"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <ReceiveConfirmModal
+        document={receive.target}
+        receiverName={receive.receiverName}
+        onReceiverNameChange={receive.setReceiverName}
+        onSubmit={receive.confirm}
+        onCancel={receive.close}
+        submitting={receive.submitting}
+      />
     </div>
   );
 };

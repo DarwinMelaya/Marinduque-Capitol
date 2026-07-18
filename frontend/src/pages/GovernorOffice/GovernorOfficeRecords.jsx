@@ -6,18 +6,8 @@ import {
   signAtGovernorOffice,
   statusLabel,
 } from "../../api/documents";
+import { formatDate, replaceById, upsertById } from "../../Utils/documentHelpers";
 import RecieveModal from "../../Components/Modals/GovernorOffice/RecieveModal";
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const GovernorOfficeRecords = () => {
   const [documents, setDocuments] = useState([]);
@@ -42,13 +32,7 @@ const GovernorOfficeRecords = () => {
   }, []);
 
   const handleReceived = (updated) => {
-    setDocuments((prev) => {
-      const exists = prev.some((d) => d.id === updated.id);
-      if (exists) {
-        return prev.map((d) => (d.id === updated.id ? updated : d));
-      }
-      return [updated, ...prev];
-    });
+    setDocuments((prev) => upsertById(prev, updated));
   };
 
   const handleSign = async (doc) => {
@@ -63,9 +47,7 @@ const GovernorOfficeRecords = () => {
     try {
       const updated = await signAtGovernorOffice(doc.id);
       toast.success("Document signed — Approved.");
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === updated.id ? updated : d)),
-      );
+      setDocuments((prev) => replaceById(prev, updated));
     } catch (err) {
       toast.error(err.message || "Failed to sign document.");
     } finally {

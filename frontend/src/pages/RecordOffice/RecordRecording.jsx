@@ -12,6 +12,7 @@ import {
 import ViewRecord from "../../Components/Modals/RecordOffice/ViewRecord";
 import EditRecord from "../../Components/Modals/RecordOffice/EditRecord";
 import { generateQrWithLogo } from "../../Utils/qrWithLogo";
+import { formatDate, replaceById } from "../../Utils/documentHelpers";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -24,17 +25,6 @@ const emptyForm = {
 
 const inputClass =
   "mt-1 block w-full rounded-md border border-[#607796]/25 bg-white px-3 py-2.5 text-sm text-[#3f5168] placeholder:text-[#a6a08a]/80 focus:outline-none focus:ring-2 focus:ring-[#607796]/40 focus:border-[#607796]";
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const RecordRecording = () => {
   const [form, setForm] = useState(emptyForm);
@@ -126,9 +116,7 @@ const RecordRecording = () => {
   };
 
   const handleDocumentSaved = (updated) => {
-    setDocuments((prev) =>
-      prev.map((doc) => (doc.id === updated.id ? updated : doc)),
-    );
+    setDocuments((prev) => replaceById(prev, updated));
     setCreated((prev) => (prev?.id === updated.id ? updated : prev));
     setViewingDoc((prev) => (prev?.id === updated.id ? updated : prev));
   };
