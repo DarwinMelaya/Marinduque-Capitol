@@ -14,6 +14,8 @@ import {
   RecordRecording,
   ProvincialAdministratorDashboard,
   ProvincialAdministratorRecords,
+  BudgetOfficeDashboard,
+  BudgetOfficeRecords,
 } from "../pages";
 import ProtectedRoutes from "../Components/Security/ProtectedRoutes";
 import Layout from "../Components/Layout/Layout";
@@ -52,6 +54,14 @@ export const Routers = () => {
               path="records"
               element={<ProvincialAdministratorRecords />}
             />
+          </Route>
+        </Route>
+
+        {/* Budget Office — BudgetOffice role only */}
+        <Route element={<ProtectedRoutes role="BudgetOffice" />}>
+          <Route path="/budget-office" element={<Layout />}>
+            <Route index element={<BudgetOfficeDashboard />} />
+            <Route path="records" element={<BudgetOfficeRecords />} />
           </Route>
         </Route>
 

@@ -1,12 +1,14 @@
 import { Outlet } from "react-router-dom";
 import {
   getSession,
+  isBudgetOffice,
   isProvincialAdministrator,
   isRecordOffice,
 } from "../../api/auth";
 import AdminSidebar from "./AdminSidebar";
 import RecordSidebar from "./RecordSidebar";
 import ProvincialAdministratorSidebar from "./ProvincialAdministratorSidebar";
+import BudgetOfficeSidebar from "./BudgetOfficeSidebar";
 import Navbar from "./Navbar";
 
 const Layout = () => {
@@ -16,6 +18,8 @@ const Layout = () => {
   if (isRecordOffice(session)) Sidebar = RecordSidebar;
   else if (isProvincialAdministrator(session)) {
     Sidebar = ProvincialAdministratorSidebar;
+  } else if (isBudgetOffice(session)) {
+    Sidebar = BudgetOfficeSidebar;
   }
 
   return (

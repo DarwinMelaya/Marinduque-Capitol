@@ -15,3 +15,7 @@ export { default as RecordRecording } from "./RecordOffice/RecordRecording";
 // Provincial Administrator
 export { default as ProvincialAdministratorDashboard } from "./ProvincialAdministrator/ProvincialAdministratorDashboard";
 export { default as ProvincialAdministratorRecords } from "./ProvincialAdministrator/ProvincialAdministratorRecords";
+
+// Budget Office
+export { default as BudgetOfficeDashboard } from "./BudgetOffice/BudgetOfficeDashboard";
+export { default as BudgetOfficeRecords } from "./BudgetOffice/BudgetOfficeRecords";
