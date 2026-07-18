@@ -35,17 +35,34 @@ const formatRelative = (value) => {
   return `${days}d ago`;
 };
 
+// 0 Record Office · 1 Prov. Admin · 2 Budget Office · 3 Governor · 4 Completed
+const JOURNEY_STEPS = 5;
+
 const journeyStep = (doc) => {
+  if (doc.status === DOCUMENT_STATUS.COMPLETED) return 4;
+  if (doc.currentLocation === DOCUMENT_LOCATION.GOVERNOR_OFFICE) return 3;
+  if (doc.currentLocation === DOCUMENT_LOCATION.BUDGET_OFFICE) return 2;
   if (doc.currentLocation === DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR) {
-    return 2;
+    return 1;
   }
-  if (doc.status === DOCUMENT_STATUS.FORWARDED) return 1;
   return 0;
 };
 
 const locationBadgeClass = (doc) => {
-  if (doc.currentLocation === DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR) {
+  if (doc.status === DOCUMENT_STATUS.COMPLETED) {
     return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+  if (doc.status === DOCUMENT_STATUS.RETURNED) {
+    return "bg-rose-50 text-rose-700 border-rose-200";
+  }
+  if (doc.currentLocation === DOCUMENT_LOCATION.GOVERNOR_OFFICE) {
+    return "bg-violet-50 text-violet-700 border-violet-200";
+  }
+  if (doc.currentLocation === DOCUMENT_LOCATION.BUDGET_OFFICE) {
+    return "bg-sky-50 text-sky-700 border-sky-200";
+  }
+  if (doc.currentLocation === DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR) {
+    return "bg-teal-50 text-teal-700 border-teal-200";
   }
   if (doc.status === DOCUMENT_STATUS.FORWARDED) {
     return "bg-amber-50 text-amber-800 border-amber-200";
@@ -54,7 +71,17 @@ const locationBadgeClass = (doc) => {
 };
 
 const locationLabel = (doc) => {
+  if (doc.status === DOCUMENT_STATUS.COMPLETED) return "Completed";
+  if (doc.status === DOCUMENT_STATUS.RETURNED) {
+    return "Returned to Record Office";
+  }
   if (doc.status === DOCUMENT_STATUS.FORWARDED) {
+    if (doc.currentLocation === DOCUMENT_LOCATION.BUDGET_OFFICE) {
+      return "Arrived at Budget Office (awaiting receive)";
+    }
+    if (doc.currentLocation === DOCUMENT_LOCATION.GOVERNOR_OFFICE) {
+      return "Arrived at Governor (awaiting receive)";
+    }
     return "In transit → Provincial Administrator";
   }
   return doc.currentLocation || DOCUMENT_LOCATION.RECORD_OFFICE;
@@ -88,7 +115,8 @@ const RecordDashboard = () => {
     const atRecord = documents.filter(
       (d) =>
         d.currentLocation === DOCUMENT_LOCATION.RECORD_OFFICE &&
-        d.status !== DOCUMENT_STATUS.FORWARDED,
+        d.status !== DOCUMENT_STATUS.FORWARDED &&
+        d.status !== DOCUMENT_STATUS.COMPLETED,
     ).length;
     const inTransit = documents.filter(
       (d) => d.status === DOCUMENT_STATUS.FORWARDED,
@@ -96,6 +124,15 @@ const RecordDashboard = () => {
     const atPa = documents.filter(
       (d) =>
         d.currentLocation === DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR,
+    ).length;
+    const atBudget = documents.filter(
+      (d) => d.currentLocation === DOCUMENT_LOCATION.BUDGET_OFFICE,
+    ).length;
+    const atGovernor = documents.filter(
+      (d) => d.currentLocation === DOCUMENT_LOCATION.GOVERNOR_OFFICE,
+    ).length;
+    const completed = documents.filter(
+      (d) => d.status === DOCUMENT_STATUS.COMPLETED,
     ).length;
     const today = documents.filter((d) => {
       if (!d.createdAt) return false;
@@ -113,6 +150,9 @@ const RecordDashboard = () => {
       atRecord,
       inTransit,
       atPa,
+      atBudget,
+      atGovernor,
+      completed,
       today,
     };
   }, [documents]);
@@ -123,7 +163,8 @@ const RecordDashboard = () => {
       if (filter === "record") {
         if (
           doc.currentLocation !== DOCUMENT_LOCATION.RECORD_OFFICE ||
-          doc.status === DOCUMENT_STATUS.FORWARDED
+          doc.status === DOCUMENT_STATUS.FORWARDED ||
+          doc.status === DOCUMENT_STATUS.COMPLETED
         ) {
           return false;
         }
@@ -135,6 +176,21 @@ const RecordDashboard = () => {
         filter === "pa" &&
         doc.currentLocation !== DOCUMENT_LOCATION.PROVINCIAL_ADMINISTRATOR
       ) {
+        return false;
+      }
+      if (
+        filter === "budget" &&
+        doc.currentLocation !== DOCUMENT_LOCATION.BUDGET_OFFICE
+      ) {
+        return false;
+      }
+      if (
+        filter === "governor" &&
+        doc.currentLocation !== DOCUMENT_LOCATION.GOVERNOR_OFFICE
+      ) {
+        return false;
+      }
+      if (filter === "completed" && doc.status !== DOCUMENT_STATUS.COMPLETED) {
         return false;
       }
       if (!q) return true;
@@ -150,13 +206,23 @@ const RecordDashboard = () => {
 
   const recent = useMemo(() => documents.slice(0, 6), [documents]);
 
-  const journeyMax = Math.max(stats.atRecord, stats.inTransit, stats.atPa, 1);
+  const journeyMax = Math.max(
+    stats.atRecord + stats.inTransit,
+    stats.atPa,
+    stats.atBudget,
+    stats.atGovernor,
+    stats.completed,
+    1,
+  );
 
   const filterTabs = [
     { id: "all", label: "All", count: stats.total },
     { id: "record", label: "Record Office", count: stats.atRecord },
     { id: "transit", label: "In transit", count: stats.inTransit },
     { id: "pa", label: "Prov. Admin", count: stats.atPa },
+    { id: "budget", label: "Budget", count: stats.atBudget },
+    { id: "governor", label: "Governor", count: stats.atGovernor },
+    { id: "completed", label: "Completed", count: stats.completed },
   ];
 
   return (
@@ -224,16 +290,16 @@ const RecordDashboard = () => {
             hint: "Still in this office",
           },
           {
-            label: "In transit",
-            value: stats.inTransit,
+            label: "In process",
+            value: stats.inTransit + stats.atPa + stats.atBudget + stats.atGovernor,
             icon: "local_shipping",
-            hint: "Forwarded, awaiting PA",
+            hint: "Moving through the chain",
           },
           {
-            label: "At Prov. Admin",
-            value: stats.atPa,
-            icon: "corporate_fare",
-            hint: "Received by PA office",
+            label: "Completed",
+            value: stats.completed,
+            icon: "task_alt",
+            hint: "Signed & released",
           },
         ].map((card) => (
           <div
@@ -278,36 +344,50 @@ const RecordDashboard = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             {
               title: "Record Office",
-              count: stats.atRecord,
+              count: stats.atRecord + stats.inTransit,
               icon: "home_storage",
               tone: "from-[#607796]/15 to-[#607796]/5",
               bar: "bg-[#607796]",
             },
             {
-              title: "In transit",
-              count: stats.inTransit,
-              icon: "sync_alt",
-              tone: "from-amber-100/80 to-amber-50/40",
-              bar: "bg-amber-500",
-            },
-            {
               title: "Provincial Administrator",
               count: stats.atPa,
               icon: "corporate_fare",
+              tone: "from-teal-100/80 to-teal-50/40",
+              bar: "bg-teal-600",
+            },
+            {
+              title: "Budget Office",
+              count: stats.atBudget,
+              icon: "payments",
+              tone: "from-sky-100/80 to-sky-50/40",
+              bar: "bg-sky-600",
+            },
+            {
+              title: "Governor Office",
+              count: stats.atGovernor,
+              icon: "account_balance",
+              tone: "from-violet-100/80 to-violet-50/40",
+              bar: "bg-violet-600",
+            },
+            {
+              title: "Completed",
+              count: stats.completed,
+              icon: "task_alt",
               tone: "from-emerald-100/80 to-emerald-50/40",
               bar: "bg-emerald-600",
             },
-          ].map((stage, index) => (
+          ].map((stage, index, arr) => (
             <div
               key={stage.title}
               className={`relative rounded-xl border border-[#607796]/10 bg-gradient-to-br ${stage.tone} p-4`}
             >
-              {index < 2 && (
-                <span className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 items-center justify-center rounded-full bg-white border border-[#607796]/15 text-[#607796] shadow-sm">
+              {index < arr.length - 1 && (
+                <span className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 items-center justify-center rounded-full bg-white border border-[#607796]/15 text-[#607796] shadow-sm">
                   <span className="material-symbols-outlined text-[14px]">
                     arrow_forward
                   </span>
@@ -446,14 +526,18 @@ const RecordDashboard = () => {
                             {locationLabel(doc)}
                           </span>
                           <div className="mt-1.5 flex items-center gap-1">
-                            {[0, 1, 2].map((i) => (
-                              <span
-                                key={i}
-                                className={`h-1.5 w-5 rounded-full ${
-                                  i <= step ? "bg-[#607796]" : "bg-[#607796]/15"
-                                }`}
-                              />
-                            ))}
+                            {Array.from({ length: JOURNEY_STEPS }).map(
+                              (_, i) => (
+                                <span
+                                  key={i}
+                                  className={`h-1.5 w-3.5 rounded-full ${
+                                    i <= step
+                                      ? "bg-[#607796]"
+                                      : "bg-[#607796]/15"
+                                  }`}
+                                />
+                              ),
+                            )}
                           </div>
                         </td>
                         <td className="py-3 pr-3">
