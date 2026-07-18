@@ -13,6 +13,11 @@ const Navbar = () => {
             className="flex items-center gap-3 min-w-0"
           >
             <img
+              src="/img/dostlogo.png"
+              alt="DOST"
+              className="h-11 w-11 sm:h-12 sm:w-12 object-contain shrink-0"
+            />
+            <img
               src="/img/logo.png"
               alt="Lalawigan ng Marinduque"
               className="h-11 w-11 sm:h-12 sm:w-12 object-contain shrink-0"

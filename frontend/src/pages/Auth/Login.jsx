@@ -79,11 +79,18 @@ const Login = () => {
 
       <div className="relative z-10 max-w-md w-full p-8 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-2xl auth-fade-up">
         <div className="flex flex-col items-center mb-6">
-          <img
-            src="/img/logo.png"
-            alt="Lalawigan ng Marinduque"
-            className="h-24 w-auto drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]"
-          />
+          <div className="flex items-center gap-4">
+            <img
+              src="/img/dostlogo.png"
+              alt="DOST"
+              className="h-24 w-auto drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+            />
+            <img
+              src="/img/logo.png"
+              alt="Lalawigan ng Marinduque"
+              className="h-24 w-auto drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+            />
+          </div>
           <h1 className="mt-4 text-center text-lg sm:text-xl font-extrabold tracking-[0.12em] text-white">
             GOVERNMENT OF MARINDUQUE
           </h1>
